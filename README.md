@@ -1,8 +1,15 @@
-# Phaser Vite TypeScript Template
+# Phaser RPG 遊戲專案
 
-This is a Phaser 3 project template that uses Vite for bundling. It supports hot-reloading for quick development workflow, includes TypeScript support and scripts to generate production-ready builds.
+這是一個使用 Phaser 3 開發的 RPG 遊戲專案。遊戲採用 TypeScript 開發，使用 Vite 作為建構工具。
 
-**[This Template is also available as a JavaScript version.](https://github.com/phaserjs/template-vite)**
+## 遊戲特色
+
+- 👾 完整的 RPG 遊戲系統
+- ⚔️ 豐富的技能系統
+- 🎮 直觀的裝備系統
+- 📦 物品欄管理
+- 🎯 即時戰鬥系統
+- 🗺️ 多張地圖場景
 
 ### Versions
 
@@ -23,12 +30,49 @@ This template has been updated for:
 | Command | Description |
 |---------|-------------|
 | `npm install` | Install project dependencies |
-| `npm run dev` | Launch a development web server |
-| `npm run build` | Create a production build in the `dist` folder |
-| `npm run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.js" below) |
-| `npm run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.js" below) |
+# 快速開始
 
-## Writing Code
+1. 安裝依賴：
+```bash
+npm install
+```
+
+2. 開發模式：
+```bash
+npm run dev
+```
+
+3. 建構專案：
+```bash
+npm run build
+```
+
+## 開發特點
+
+- 🔥 使用 TypeScript 確保程式碼品質
+- 🛠️ Vite 提供快速的開發體驗
+- 📦 模組化的程式碼結構
+- 🎮 完整的遊戲框架
+- 🔧 開發者除錯工具
+
+## 專案結構
+
+```
+src/
+├── core/          # 核心遊戲邏輯
+├── game/          # 遊戲場景與物件
+├── ui/            # 使用者介面元件
+└── debug/         # 除錯工具
+```
+
+## 系統需求
+
+- Node.js 18.0.0 或更高版本
+- 現代瀏覽器（支援 WebGL）
+
+## 授權
+
+本專案採用 MIT 授權條款
 
 After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm run dev`.
 
