@@ -1,0 +1,228 @@
+[1mdiff --git "a/src/docs/\346\212\200\350\203\275\347\263\273\347\265\261\350\252\252\346\230\216.md" "b/src/docs/\346\212\200\350\203\275\347\263\273\347\265\261\350\252\252\346\230\216.md"[m
+[1mdeleted file mode 100644[m
+[1mindex 7e56286..0000000[m
+[1m--- "a/src/docs/\346\212\200\350\203\275\347\263\273\347\265\261\350\252\252\346\230\216.md"[m
+[1m+++ /dev/null[m
+[36m@@ -1,55 +0,0 @@[m
+[31m-// filepath: c:\Users\asas1\OneDrive\Desktop\phaserRpg\src\docs\技能系統說明.md[m
+[31m-# 技能系統說明文件[m
+[31m-[m
+[31m-## 技能的兩個重要時間階段[m
+[31m-[m
+[31m-技能在施放過程中有兩個重要的時間階段，這兩個階段有不同的功能：[m
+[31m-[m
+[31m-### 1. 技能後搖 (Animation Recovery / Backswing)[m
+[31m-- 技能施放後，角色需要完成特定動作的時間[m
+[31m-- 在後搖期間，角色通常**無法移動**或執行其他動作[m
+[31m-- 當後搖結束，角色恢復正常行動能力[m
+[31m-- 後搖是**角色動作限制**[m
+[31m-- 每次施放技能都會觸發後搖[m
+[31m-- 後搖時間由 `Skill.getRecoveryTime()` 方法提供[m
+[31m-[m
+[31m-### 2. 技能冷卻 (Cooldown)[m
+[31m-- 技能使用後，在一段時間內無法再次使用該技能的限制[m
+[31m-- 在冷卻期間，角色可以**正常移動**和使用其他未在冷卻中的技能[m
+[31m-- 冷卻僅影響**特定技能的可用性**[m
+[31m-- 冷卻時間由 `Skill.getCooldown()` 方法提供[m
+[31m-- 冷卻狀態由 `Skill.isOnCooldown()` 方法判定[m
+[31m-[m
+[31m-## 事件流程[m
+[31m-[m
+[31m-1. 當玩家按下技能按鍵:[m
+[31m-   - 觸發 `CAST_START` 事件 (前搖開始)[m
+[31m-   - 設置 `_isCastingSkill = true` (限制角色移動)[m
+[31m-[m
+[31m-2. 前搖結束後:[m
+[31m-   - 觸發 `CAST_EFFECT` 事件 (技能效果產生)[m
+[31m-   - 啟動技能冷卻 `skill.startCooldown()`[m
+[31m-   - 技能開始產生效果 (例如發射投射物)[m
+[31m-   - 開始後搖計時[m
+[31m-[m
+[31m-3. 後搖結束後:[m
+[31m-   - 觸發 `CAST_COMPLETE` 事件[m
+[31m-   - 設置 `_isCastingSkill = false` (角色可以自由移動)[m
+[31m-   - **注意**: 此時技能可能仍在冷卻中，但角色已可以移動[m
+[31m-[m
+[31m-4. 冷卻結束後:[m
+[31m-   - 技能可以再次使用 `isOnCooldown = false`[m
+[31m-[m
+[31m-## 重要提示[m
+[31m-[m
+[31m-- 後搖和冷卻是兩個獨立的概念[m
+[31m-- 後搖結束 != 冷卻結束[m
+[31m-- 後搖影響的是角色能否行動[m
+[31m-- 冷卻影響的是特定技能能否再次使用[m
+[31m-[m
+[31m-## 在程式碼中的實現[m
+[31m-[m
+[31m-- `skillBehavior.ts`: 定義技能行為，包含前搖、後搖時間管理[m
+[31m-- `skillCaster.ts`: 管理技能施放和狀態切換[m
+[31m-- `skill.ts`: 處理技能冷卻時間[m
+[31m-- `SkillAnimationController.ts`: 專門處理技能後搖階段[m
+[1mdiff --git a/src/game/Player.ts b/src/game/Player.ts[m
+[1mindex 7b1c300..d01e4c5 100644[m
+[1m--- a/src/game/Player.ts[m
+[1m+++ b/src/game/Player.ts[m
+[36m@@ -183,40 +183,32 @@[m [mclass Player {[m
+    * 檢查玩家是否可以移動[m
+    * 當玩家處於技能施放狀態且該技能不允許移動時，返回 false[m
+    */  canMove(): boolean {[m
+[31m-    // 從遊戲註冊表中獲取 skillCaster[m
+[31m-    if (this.sprite.scene.game.registry.has('skillCaster')) {[m
+[31m-      const skillCaster = this.sprite.scene.game.registry.get('skillCaster');[m
+[31m-      [m
+[31m-      // 檢查是否正在施放技能（前搖或後搖階段）[m
+[31m-      // 必須同時滿足：isCastingSkill 為 true 且 currentSkillId 不為 null[m
+[31m-      if (skillCaster) {[m
+[31m-        // 輸出詳細的診斷信息[m
+[31m-        if (skillCaster.isCastingSkill()) {[m
+[31m-          const currentSkillId = skillCaster.getCurrentSkillId();[m
+[31m-          [m
+[31m-          // 技能ID存在才繼續檢查[m
+[31m-          if (currentSkillId) {[m
+[32m+[m[32m    if (!this.sprite.scene.game.registry.has('skillCaster')) {[m
+[32m+[m[32m        return true;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    const skillCaster = this.sprite.scene.game.registry.get('skillCaster');[m
+[32m+[m[41m    [m
+[32m+[m[32m    // 檢查前搖狀態[m
+[32m+[m[32m    if (skillCaster.isCastingSkill()) {[m
+[32m+[m[32m        const currentSkillId = skillCaster.getCurrentSkillId();[m
+[32m+[m[32m        if (currentSkillId) {[m
+             const behavior = skillCaster.getSkillBehavior(currentSkillId);[m
+[31m-            [m
+[31m-            if (behavior) {[m
+[31m-              const canMove = behavior.canMoveWhileCasting();[m
+[31m-              [m
+[31m-              if (!canMove) {[m
+[31m-                // console.log(`[Player.ts] 技能 ${currentSkillId} 正在前搖或後搖階段，禁止移動`);[m
+[32m+[m[32m            if (behavior && !behavior.canMoveWhileCasting()) {[m
+                 return false;[m
+[31m-              } else {[m
+[31m-                // console.log(`[Player.ts] 技能 ${currentSkillId} 允許移動`);[m
+[31m-              }[m
+[31m-            } else {[m
+[31m-              // console.log(`[Player.ts] 技能 ${currentSkillId} 的行為為null，允許移動`);[m
+[31m-            }          } else {[m
+[31m-            console.log(`[Player.ts] isCastingSkill為true，但currentSkillId為null，這是一個錯誤狀態！`);[m
+[31m-            // 強制重置施放狀態以恢復正常[m
+[31m-            skillCaster.resetCastingState();[m
+[31m-          }[m
+[32m+[m[32m            }[m
+         }[m
+[31m-      }[m
+     }[m
+[32m+[m[41m    [m
+[32m+[m[32m    // 檢查後搖狀態[m
+[32m+[m[32m    const activeSkillIds = skillCaster.getActiveSkillIds();[m
+[32m+[m[32m    for (const skillId of activeSkillIds) {[m
+[32m+[m[32m        const behavior = skillCaster.getSkillBehavior(skillId);[m
+[32m+[m[32m        if (behavior && !behavior.canMoveWhileCasting()) {[m
+[32m+[m[32m            return false;[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+     return true;[m
+   }[m
+ [m
+[1mdiff --git a/src/ui/PhaserKeyBindPanel.ts b/src/ui/PhaserKeyBindPanel.ts[m
+[1mindex d05d761..c3b883f 100644[m
+[1m--- a/src/ui/PhaserKeyBindPanel.ts[m
+[1m+++ b/src/ui/PhaserKeyBindPanel.ts[m
+[36m@@ -179,16 +179,9 @@[m [mexport class PhaserKeyBindPanel extends BasePanel {[m
+                 console.log("鍵位綁定面板：添加已啟用技能:", skill.getName());[m
+             }[m
+         }[m
+[31m-        [m
+[31m-        // 如果沒有找到已啟用的主動技能，檢查所有已學習的主動技能[m
+[32m+[m[32m          // 只顯示已啟用的技能[m
+         if (enabledSkills.length === 0) {[m
+[31m-            console.log("鍵位綁定面板：未找到已啟用技能，檢查所有已學習技能");[m
+[31m-            for (const skill of this.skillManager.getAllSkills()) {[m
+[31m-                if (skill.isLearned() && skill.getType() === SkillType.ACTIVE) {[m
+[31m-                    enabledSkills.push(skill);[m
+[31m-                    console.log("鍵位綁定面板：添加已學習技能:", skill.getName());[m
+[31m-                }[m
+[31m-            }[m
+[32m+[m[32m            console.log("鍵位綁定面板：未找到已啟用技能");[m
+         }[m
+         [m
+         // 創建綁定項目[m
+[1mdiff --git a/src/ui/PhaserSkillPanel.ts b/src/ui/PhaserSkillPanel.ts[m
+[1mindex da3db41..84da177 100644[m
+[1m--- a/src/ui/PhaserSkillPanel.ts[m
+[1m+++ b/src/ui/PhaserSkillPanel.ts[m
+[36m@@ -628,7 +628,9 @@[m [mprivate onToggleButtonClick(): void {[m
+     [m
+     if (success) {[m
+         console.log(`成功${isEnabled ? '禁用' : '啟用'}技能: ${skill.getName()}`);[m
+[32m+[m[32m        // 更新所有相關面板[m
+         this.updateDetailsPanel(skill); // 更新詳情面板[m
+[32m+[m[32m        this.updateSkillDisplay(); // 更新技能列表[m
+     } else {[m
+         this.showErrorMessage(`操作失敗: ${isEnabled ? '禁用' : '啟用'}技能失敗`);[m
+     }[m
+[36m@@ -663,15 +665,36 @@[m [mprivate createSkillItem(skill: Skill, index: number): Phaser.GameObjects.Contain[m
+     [m
+     // 背景[m
+     const isLearned = skill.isLearned();[m
+[32m+[m[32m    const isEnabled = isLearned && this.skillManager.isSkillEnabled(skill.getId());[m
+[32m+[m[41m    [m
+[32m+[m[32m    let bgColor = 0x333333; // 未學習的背景色(深灰色)[m
+[32m+[m[32m    if (isLearned) {[m
+[32m+[m[32m        bgColor = isEnabled ? 0x2d5a27 : 0x5a2727; // 已學習+啟用=深綠色, 已學習+禁用=深紅色[m
+[32m+[m[32m    }[m
+[32m+[m
+     const bg = this.scene.add.rectangle([m
+         0, 0,[m
+         this.listWidth, this.itemHeight,[m
+[31m-        isLearned ? 0x446644 : 0x333333[m
+[32m+[m[32m        bgColor[m
+     );[m
+     bg.setOrigin(0);[m
+     bg.setStrokeStyle(2, this.getColorBySkillType(skill.getType()));[m
+     container.add(bg);[m
+     [m
+[32m+[m[32m    // 滑鼠懸停效果[m[41m [m
+[32m+[m[32m    bg.setInteractive({ useHandCursor: true });[m
+[32m+[m[32m    bg.on('pointerover', () => {[m
+[32m+[m[32m        let hoverColor = 0x444444; // 未學習時的懸停色[m
+[32m+[m[32m        if (isLearned) {[m
+[32m+[m[32m            hoverColor = isEnabled ? 0x3d7a37 : 0x7a3737; // 已學習+啟用=亮綠色, 已學習+禁用=亮紅色[m
+[32m+[m[32m        }[m
+[32m+[m[32m        bg.setFillStyle(hoverColor);[m
+[32m+[m[32m    });[m
+[32m+[m[41m    [m
+[32m+[m[32m    bg.on('pointerout', () => {[m
+[32m+[m[32m        bg.setFillStyle(bgColor);[m
+[32m+[m[32m    });[m
+[32m+[m
+     // 圖標[m
+     const iconText = this.scene.add.text([m
+         this.listPadding * 2,[m
+[36m@@ -721,7 +744,8 @@[m [mprivate createSkillItem(skill: Skill, index: number): Phaser.GameObjects.Contain[m
+     );[m
+     levelInfoText.setOrigin(0, 0.5);[m
+     container.add(levelInfoText);[m
+[31m-      // 技能點數要求[m
+[32m+[m[41m    [m
+[32m+[m[32m    // 技能點數要求[m
+     const nextLevelCost = skill.getUpgradePointCost();[m
+     let costMsg = '已達最高等級';[m
+     [m
+[36m@@ -758,14 +782,6 @@[m [mprivate createSkillItem(skill: Skill, index: number): Phaser.GameObjects.Contain[m
+         this.onSkillItemClick(skill);[m
+     });[m
+     [m
+[31m-    bg.on('pointerover', () => {[m
+[31m-        bg.setFillStyle(isLearned ? 0x558855 : 0x666666);[m
+[31m-    });[m
+[31m-    [m
+[31m-    bg.on('pointerout', () => {[m
+[31m-        bg.setFillStyle(isLearned ? 0x446644 : 0x555555);[m
+[31m-    });[m
+[31m-    [m
+     // 如果是選中的技能，高亮顯示[m
+     if (this.selectedSkill && skill.getId() === this.selectedSkill.getId()) {[m
+         bg.setStrokeStyle(3, 0xffffff);[m

@@ -2,15 +2,31 @@ import { SkillEventManager } from './skillEventManager';
 import { SkillEvent, SkillEventType } from './types';
 
 /**
+ * 計算實際前後搖時間
+ * @param baseTime 基礎時間
+ * @param attackSpeed 攻擊速度
+ * @returns 實際時間
+ */
+function calculateActualCastTime(baseTime: number, attackSpeed: number): number {
+    // 確保攻擊速度至少為0.1以避免除以0或負數的情況
+    const safeAttackSpeed = Math.max(0.1, attackSpeed);
+    return baseTime / safeAttackSpeed;
+}
+
+/**
  * 技能參數介面
  */
 export interface SkillParams {
-    x: number;             // 施法位置 x
-    y: number;             // 施法位置 y
-    direction: number;     // 施法方向（度數）
-    casterId: string;      // 施法者 ID
-    skillId?: string;      // 技能 ID
-    skillLevel?: number;   // 技能等級
+    skillId: string;
+    skillLevel: number;
+    casterId: string;
+    x: number;
+    y: number;
+    direction: number;
+    casterStats?: {
+        attackSpeed: number;
+        [key: string]: any;
+    };
 }
 
 /**
@@ -41,11 +57,16 @@ export class ClickSkillBehavior implements SkillBehavior {
         this.castTime = castTime;
         this.recoveryTime = recoveryTime;
     }
-      onSkillStart(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) {
-            console.error('[ClickSkillBehavior] 缺少技能ID或等級');
-            return;
-        }
+    
+    onSkillStart(params: SkillParams): void {
+        // 從施法者狀態獲取攻擊速度，如果沒有提供則使用1
+        const attackSpeed = params.casterStats?.attackSpeed || 1;
+        
+        // 計算實際的前搖和後搖時間
+        const actualCastTime = calculateActualCastTime(this.castTime, attackSpeed);
+        const actualRecoveryTime = calculateActualCastTime(this.recoveryTime, attackSpeed);
+
+        console.log(`[ClickSkillBehavior] 技能 ${params.skillId} 開始施放，攻擊速度: ${attackSpeed}, 實際前搖: ${actualCastTime}秒, 實際後搖: ${actualRecoveryTime}秒`);
         
         // 發送技能開始事件（前搖開始，角色無法移動）
         this.eventManager.emitCastStart(
@@ -56,41 +77,34 @@ export class ClickSkillBehavior implements SkillBehavior {
             params.direction
         );
         
-        // 在前搖結束後發送效果事件
+        // 在實際前搖結束後發送效果事件
         setTimeout(() => {
-            // 前搖結束，發送效果事件（技能效果產生）
-            // 此時技能效果已經產生，但角色仍在後搖階段，仍然無法移動
             this.eventManager.emitCastEffect(
                 params.skillId,
                 params.skillLevel,
                 params.casterId,
                 { x: params.x, y: params.y },
                 params.direction,
-                { recoveryTime: this.recoveryTime } // 添加後搖時間信息
+                { recoveryTime: actualRecoveryTime }
             );
             
-            // 在後搖結束後發送完成事件
+            // 在實際後搖結束後發送完成事件
             setTimeout(() => {
-                // 後搖結束，技能施放完成，角色可以移動了
-                // 注意：此時技能可能仍在冷卻中，但角色可以移動
                 this.eventManager.emitCastComplete(
                     params.skillId,
                     params.skillLevel,
                     params.casterId
                 );
-                
-                console.log(`[ClickSkillBehavior] 技能 ${params.skillId} 的後搖已結束，角色可以移動了`);
-            }, this.recoveryTime * 1000);
-            
-        }, this.castTime * 1000);
+            }, actualRecoveryTime * 1000);
+        }, actualCastTime * 1000);
     }
     
-    onSkillHold(params: SkillParams): void {
-        // 單擊型技能不需要實現此方法
+    onSkillHold(_params: SkillParams): void {
+        // 不需要實現，這是給持續型技能使用的
     }
     
-    onSkillEnd(params: SkillParams): void {
-        // 單擊型技能不需要實現此方法
+    onSkillEnd(_params: SkillParams): void {
+        // 不需要實現，這是給持續型技能使用的
     }
     
     canInterruptOtherSkills(): boolean {
@@ -125,10 +139,11 @@ export class HoldSkillBehavior implements SkillBehavior {
     }
     
     onSkillStart(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) {
-            console.error('[HoldSkillBehavior] 缺少技能ID或等級');
-            return;
-        }
+        // 從施法者狀態獲取攻擊速度
+        const attackSpeed = params.casterStats?.attackSpeed || 1;
+        
+        // 計算實際的前搖和後搖時間
+        const actualCastTime = calculateActualCastTime(this.castTime, attackSpeed);
         
         // 發送技能開始事件
         this.eventManager.emitCastStart(
@@ -149,37 +164,34 @@ export class HoldSkillBehavior implements SkillBehavior {
                 this.triggerEffect(params);
             }, this.intervalTime * 1000);
             
-        }, this.castTime * 1000);
+        }, actualCastTime * 1000);
     }
     
-    onSkillHold(params: SkillParams): void {
-        // 按壓型技能在持續按住時會通過定時器觸發效果
-        // 此方法可以用來更新參數，例如玩家移動後的位置
+    onSkillHold(_params: SkillParams): void {
+        // 按壓型技能在持續按住時自動由定時器觸發效果
     }
     
     onSkillEnd(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) {
-            console.error('[HoldSkillBehavior] 缺少技能ID或等級');
-            return;
-        }
-        
         // 清除定時器
         if (this.intervalId !== null) {
             clearInterval(this.intervalId);
             this.intervalId = null;
         }
+
+        const attackSpeed = params.casterStats?.attackSpeed || 1;
+        const actualRecoveryTime = calculateActualCastTime(this.recoveryTime, attackSpeed);
         
-        // 發送技能完成事件
-        this.eventManager.emitCastComplete(
-            params.skillId,
-            params.skillLevel,
-            params.casterId
-        );
+        // 在後搖結束後發送完成事件
+        setTimeout(() => {
+            this.eventManager.emitCastComplete(
+                params.skillId,
+                params.skillLevel,
+                params.casterId
+            );
+        }, actualRecoveryTime * 1000);
     }
-    
+
     protected triggerEffect(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) return;
-        
         // 發送技能效果事件
         this.eventManager.emitCastEffect(
             params.skillId,
@@ -208,92 +220,40 @@ export class HoldSkillBehavior implements SkillBehavior {
  * 適用於開關式技能，第一次點擊開啟，再次點擊關閉
  */
 export class ToggleSkillBehavior implements SkillBehavior {
-    protected eventManager: SkillEventManager;
-    private active: boolean = false;
-    private intervalId: number | null = null;
-    private updateInterval: number;
+    private eventManager: SkillEventManager;
+    private isActive: boolean = false;
     
-    constructor(updateInterval: number = 1.0) {
+    constructor() {
         this.eventManager = SkillEventManager.getInstance();
-        this.updateInterval = updateInterval;
     }
     
     onSkillStart(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) {
-            console.error('[ToggleSkillBehavior] 缺少技能ID或等級');
-            return;
-        }
+        this.isActive = !this.isActive;
         
-        if (!this.active) {
-            // 開啟技能
-            this.active = true;
-            
-            // 發送技能開始事件
-            this.eventManager.emitCastStart(
-                params.skillId,
-                params.skillLevel,
-                params.casterId,
-                { x: params.x, y: params.y },
-                params.direction
-            );
-            
-            // 觸發首次效果
-            this.eventManager.emitCastEffect(
-                params.skillId,
-                params.skillLevel,
-                params.casterId,
-                { x: params.x, y: params.y },
-                params.direction
-            );
-            
-            // 設置定時器，定期更新效果
-            this.intervalId = window.setInterval(() => {
-                if (this.active) {
-                    this.eventManager.emitCastEffect(
-                        params.skillId,
-                        params.skillLevel,
-                        params.casterId,
-                        { x: params.x, y: params.y },
-                        params.direction,
-                        { isToggleUpdate: true }
-                    );
-                }
-            }, this.updateInterval * 1000);
-            
-        } else {
-            // 關閉技能
-            this.onSkillEnd(params);
-        }
-    }
-    
-    onSkillHold(params: SkillParams): void {
-        // 狀態型技能不需要實現此方法
-    }
-    
-    onSkillEnd(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) {
-            console.error('[ToggleSkillBehavior] 缺少技能ID或等級');
-            return;
-        }
-        
-        // 清除定時器
-        if (this.intervalId !== null) {
-            clearInterval(this.intervalId);
-            this.intervalId = null;
-        }
-        
-        // 切換狀態
-        this.active = false;
-        
-        // 發送技能完成事件
-        this.eventManager.emitCastComplete(
+        // 切換技能狀態時不需要前後搖，直接觸發效果
+        this.eventManager.emitCastEffect(
             params.skillId,
             params.skillLevel,
             params.casterId,
-            undefined,
-            undefined,
-            { wasToggleActive: true }
+            { x: params.x, y: params.y },
+            params.direction,
+            { isActive: this.isActive }
         );
+        
+        // 立即完成施放
+        this.eventManager.emitCastComplete(
+            params.skillId,
+            params.skillLevel,
+            params.casterId
+        );
+    }
+    
+    onSkillHold(_params: SkillParams): void {
+        // 開關技能不需要處理持續按住
+    }
+    
+    onSkillEnd(_params: SkillParams): void {
+        // 開關技能在 onSkillStart 中處理狀態切換
     }
     
     canInterruptOtherSkills(): boolean {
@@ -308,8 +268,8 @@ export class ToggleSkillBehavior implements SkillBehavior {
         return true;
     }
     
-    isActive(): boolean {
-        return this.active;
+    isSkillActive(): boolean {
+        return this.isActive;
     }
 }
 
@@ -330,11 +290,6 @@ export class ChargeSkillBehavior implements SkillBehavior {
     }
     
     onSkillStart(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) {
-            console.error('[ChargeSkillBehavior] 缺少技能ID或等級');
-            return;
-        }
-        
         // 記錄蓄能開始時間
         this.chargeStartTime = Date.now();
         
@@ -352,30 +307,22 @@ export class ChargeSkillBehavior implements SkillBehavior {
             const chargeTime = (Date.now() - this.chargeStartTime) / 1000;
             const chargePercent = Math.min(chargeTime / this.maxChargeTime, 1.0);
             
-            this.eventManager.dispatchEvent({
-                type: SkillEventType.SKILL_CHARGE,
-                skillId: params.skillId,
-                skillLevel: params.skillLevel,
-                casterId: params.casterId,
-                timestamp: Date.now(),
-                position: { x: params.x, y: params.y },
-                direction: params.direction,
-                data: { chargePercent, chargeTime }
-            });
-            
+            this.eventManager.emitCastEffect(
+                params.skillId,
+                params.skillLevel,
+                params.casterId,
+                { x: params.x, y: params.y },
+                params.direction,
+                { chargePercent, chargeTime }
+            );
         }, this.updateInterval * 1000);
     }
     
-    onSkillHold(params: SkillParams): void {
+    onSkillHold(_params: SkillParams): void {
         // 蓄能型技能在持續按住時通過定時器發送蓄能事件
     }
     
     onSkillEnd(params: SkillParams): void {
-        if (!params.skillId || !params.skillLevel) {
-            console.error('[ChargeSkillBehavior] 缺少技能ID或等級');
-            return;
-        }
-        
         // 清除定時器
         if (this.chargingIntervalId !== null) {
             clearInterval(this.chargingIntervalId);
@@ -385,6 +332,10 @@ export class ChargeSkillBehavior implements SkillBehavior {
         // 計算蓄能時間和百分比
         const chargeTime = Math.min((Date.now() - this.chargeStartTime) / 1000, this.maxChargeTime);
         const chargePercent = chargeTime / this.maxChargeTime;
+
+        // 獲取攻擊速度並計算實際後搖時間
+        const attackSpeed = params.casterStats?.attackSpeed || 1;
+        const actualRecoveryTime = calculateActualCastTime(0.5, attackSpeed); // 使用0.5秒作為基礎後搖時間
         
         // 發送技能效果事件，帶上蓄能信息
         this.eventManager.emitCastEffect(
@@ -393,17 +344,17 @@ export class ChargeSkillBehavior implements SkillBehavior {
             params.casterId,
             { x: params.x, y: params.y },
             params.direction,
-            { chargePercent, chargeTime }
+            { chargePercent, chargeTime, recoveryTime: actualRecoveryTime }
         );
         
-        // 發送技能結束事件
+        // 在後搖結束後發送完成事件
         setTimeout(() => {
             this.eventManager.emitCastComplete(
                 params.skillId,
                 params.skillLevel,
                 params.casterId
             );
-        }, 500); // 短暫後搖
+        }, actualRecoveryTime * 1000);
     }
     
     canInterruptOtherSkills(): boolean {

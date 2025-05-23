@@ -628,7 +628,9 @@ private onToggleButtonClick(): void {
     
     if (success) {
         console.log(`成功${isEnabled ? '禁用' : '啟用'}技能: ${skill.getName()}`);
+        // 更新所有相關面板
         this.updateDetailsPanel(skill); // 更新詳情面板
+        this.updateSkillDisplay(); // 更新技能列表
     } else {
         this.showErrorMessage(`操作失敗: ${isEnabled ? '禁用' : '啟用'}技能失敗`);
     }
@@ -663,15 +665,36 @@ private createSkillItem(skill: Skill, index: number): Phaser.GameObjects.Contain
     
     // 背景
     const isLearned = skill.isLearned();
+    const isEnabled = isLearned && this.skillManager.isSkillEnabled(skill.getId());
+    
+    let bgColor = 0x333333; // 未學習的背景色(深灰色)
+    if (isLearned) {
+        bgColor = isEnabled ? 0x2d5a27 : 0x5a2727; // 已學習+啟用=深綠色, 已學習+禁用=深紅色
+    }
+
     const bg = this.scene.add.rectangle(
         0, 0,
         this.listWidth, this.itemHeight,
-        isLearned ? 0x446644 : 0x333333
+        bgColor
     );
     bg.setOrigin(0);
     bg.setStrokeStyle(2, this.getColorBySkillType(skill.getType()));
     container.add(bg);
     
+    // 滑鼠懸停效果 
+    bg.setInteractive({ useHandCursor: true });
+    bg.on('pointerover', () => {
+        let hoverColor = 0x444444; // 未學習時的懸停色
+        if (isLearned) {
+            hoverColor = isEnabled ? 0x3d7a37 : 0x7a3737; // 已學習+啟用=亮綠色, 已學習+禁用=亮紅色
+        }
+        bg.setFillStyle(hoverColor);
+    });
+    
+    bg.on('pointerout', () => {
+        bg.setFillStyle(bgColor);
+    });
+
     // 圖標
     const iconText = this.scene.add.text(
         this.listPadding * 2,
@@ -721,7 +744,8 @@ private createSkillItem(skill: Skill, index: number): Phaser.GameObjects.Contain
     );
     levelInfoText.setOrigin(0, 0.5);
     container.add(levelInfoText);
-      // 技能點數要求
+    
+    // 技能點數要求
     const nextLevelCost = skill.getUpgradePointCost();
     let costMsg = '已達最高等級';
     
@@ -756,14 +780,6 @@ private createSkillItem(skill: Skill, index: number): Phaser.GameObjects.Contain
     bg.setInteractive({ useHandCursor: true });
     bg.on('pointerdown', () => {
         this.onSkillItemClick(skill);
-    });
-    
-    bg.on('pointerover', () => {
-        bg.setFillStyle(isLearned ? 0x558855 : 0x666666);
-    });
-    
-    bg.on('pointerout', () => {
-        bg.setFillStyle(isLearned ? 0x446644 : 0x555555);
     });
     
     // 如果是選中的技能，高亮顯示

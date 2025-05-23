@@ -179,16 +179,9 @@ export class PhaserKeyBindPanel extends BasePanel {
                 console.log("鍵位綁定面板：添加已啟用技能:", skill.getName());
             }
         }
-        
-        // 如果沒有找到已啟用的主動技能，檢查所有已學習的主動技能
+          // 只顯示已啟用的技能
         if (enabledSkills.length === 0) {
-            console.log("鍵位綁定面板：未找到已啟用技能，檢查所有已學習技能");
-            for (const skill of this.skillManager.getAllSkills()) {
-                if (skill.isLearned() && skill.getType() === SkillType.ACTIVE) {
-                    enabledSkills.push(skill);
-                    console.log("鍵位綁定面板：添加已學習技能:", skill.getName());
-                }
-            }
+            console.log("鍵位綁定面板：未找到已啟用技能");
         }
         
         // 創建綁定項目

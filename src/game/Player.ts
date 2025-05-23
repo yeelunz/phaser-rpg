@@ -183,40 +183,32 @@ class Player {
    * 檢查玩家是否可以移動
    * 當玩家處於技能施放狀態且該技能不允許移動時，返回 false
    */  canMove(): boolean {
-    // 從遊戲註冊表中獲取 skillCaster
-    if (this.sprite.scene.game.registry.has('skillCaster')) {
-      const skillCaster = this.sprite.scene.game.registry.get('skillCaster');
-      
-      // 檢查是否正在施放技能（前搖或後搖階段）
-      // 必須同時滿足：isCastingSkill 為 true 且 currentSkillId 不為 null
-      if (skillCaster) {
-        // 輸出詳細的診斷信息
-        if (skillCaster.isCastingSkill()) {
-          const currentSkillId = skillCaster.getCurrentSkillId();
-          
-          // 技能ID存在才繼續檢查
-          if (currentSkillId) {
-            const behavior = skillCaster.getSkillBehavior(currentSkillId);
-            
-            if (behavior) {
-              const canMove = behavior.canMoveWhileCasting();
-              
-              if (!canMove) {
-                // console.log(`[Player.ts] 技能 ${currentSkillId} 正在前搖或後搖階段，禁止移動`);
-                return false;
-              } else {
-                // console.log(`[Player.ts] 技能 ${currentSkillId} 允許移動`);
-              }
-            } else {
-              // console.log(`[Player.ts] 技能 ${currentSkillId} 的行為為null，允許移動`);
-            }          } else {
-            console.log(`[Player.ts] isCastingSkill為true，但currentSkillId為null，這是一個錯誤狀態！`);
-            // 強制重置施放狀態以恢復正常
-            skillCaster.resetCastingState();
-          }
-        }
-      }
+    if (!this.sprite.scene.game.registry.has('skillCaster')) {
+        return true;
     }
+
+    const skillCaster = this.sprite.scene.game.registry.get('skillCaster');
+    
+    // 檢查前搖狀態
+    if (skillCaster.isCastingSkill()) {
+        const currentSkillId = skillCaster.getCurrentSkillId();
+        if (currentSkillId) {
+            const behavior = skillCaster.getSkillBehavior(currentSkillId);
+            if (behavior && !behavior.canMoveWhileCasting()) {
+                return false;
+            }
+        }
+    }
+    
+    // 檢查後搖狀態
+    const activeSkillIds = skillCaster.getActiveSkillIds();
+    for (const skillId of activeSkillIds) {
+        const behavior = skillCaster.getSkillBehavior(skillId);
+        if (behavior && !behavior.canMoveWhileCasting()) {
+            return false;
+        }
+    }
+
     return true;
   }
 
