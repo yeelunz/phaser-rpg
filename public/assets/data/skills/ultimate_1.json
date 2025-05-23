@@ -1,0 +1,51 @@
+[
+  {
+    "theme_name": "武器大師",
+    "theme_id": "ultimate_wpn_1",
+    "theme_icon": "⚔️",
+    "maxLevel": 5,
+    "category" : "ultimate",
+    "active": {
+      "id": "slash",
+      "name": "霸者斬",
+      "castTime": 0.15,
+      "recoveryTime": 0.5,
+      "animation": null,
+      "energyCost": [3, 3, 3, 3, 3],
+      "cooldown": [0, 0, 0, 0, 0],
+      "category": "basic_active",
+      "type": "active",
+      "icon": "⚔️",
+      "descriptions": [
+        "對前方扇形範圍內最多3名敵人造成120%傷害。",
+        "對前方扇形範圍內最多5名敵人造成140%傷害。",
+        "對前方圓形範圍內最多5名敵人造成140%傷害。",
+        "對圓形範圍內所有敵人造成150%傷害。",
+        "對圓形範圍內所有敵人造成150%傷害，按住時可以蓄力，蓄力達2秒施放時可以最高提升傷害至260%。"
+      ],
+      "weaponRestriction": "melee",
+      "skillPointType": "B"
+    },
+    "passive": {
+      "id": "energy_boost",
+      "name": "霸者",
+      "castTime": 0.0,
+      "recoveryTime": 0.0,
+      "animation": null,
+      "category": "basic_passive",
+      "energyCost": [0, 0, 0, 0, 0],
+      "cooldown": [0, 0, 0, 0, 0],
+      "type": "passive",
+      "icon": "🔋",
+      "descriptions": [
+        "提升5點最大能量值。",
+        "提升10點最大能量值。",
+        "提升15點最大能量值。",
+        "提升20點最大能量值。",
+        "提升30點最大能量值。"
+      ],
+      "weaponRestriction": "any",
+      "skillPointType": "B"
+    }
+  }
+]

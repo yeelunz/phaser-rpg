@@ -1,0 +1,614 @@
+[
+  {
+    "id": "slash",
+    "name": "橫斬",
+    "castTime": 0.15,
+    "recoveryTime": 0.5,
+    "maxLevel": 5,
+    "animation": null,
+    "energyCost": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "category": "basic_active",
+    "type": "active",
+    "icon": "⚔️",
+    "descriptions": [
+      "對前方扇形範圍內最多3名敵人造成120%傷害。",
+      "對前方扇形範圍內最多5名敵人造成140%傷害。",
+      "對前方圓形範圍內最多5名敵人造成140%傷害。",
+      "對圓形範圍內所有敵人造成150%傷害。",
+      "對圓形範圍內所有敵人造成150%傷害，按住時可以蓄力，蓄力達2秒施放時可以最高提升傷害至260%。"
+    ],
+    "weaponRestriction": "melee",
+    "skillPointType": "B"
+  },
+  {
+    "id": "shockwave",
+    "name": "震擊",
+    "castTime": 0.3,
+    "recoveryTime": 0.05,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "💥",
+    "descriptions": [
+      "對前方指定小範圍圓形區域內所有敵人造成120%傷害。",
+      "對前方指定小範圍圓形區域內所有敵人造成120%傷害。施法速度提升。",
+      "對前方指定小範圍圓形區域內所有敵人造成150%傷害。施法速度提升。",
+      "對前方指定圓形區域內所有敵人造成150%傷害，範圍擴大25%。施法速度提升。",
+      "對前方指定圓形區域內所有敵人造成150%傷害，範圍擴大25%。施法速度提升。"
+    ],
+    "weaponRestriction": "medium",
+    "skillPointType": "B"
+  },
+  {
+    "id": "snipe",
+    "name": "狙殺",
+    "castTime": 0.4,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "🏹",
+    "descriptions": [
+      "朝指定方向射出一枚箭矢，對首名命中的敵人造成150%傷害。箭矢飛行距離無上限。",
+      "朝指定方向射出一枚箭矢，對首名命中的敵人造成150%傷害，並穿透至多1名額外敵人，穿透後傷害降為75%。箭矢飛行距離無上限。",
+      "朝指定方向射出一枚箭矢，對首名命中的敵人造成200%傷害，並穿透至多1名額外敵人，穿透後傷害降為100%。箭矢飛行距離無上限。",
+      "朝指定方向射出一枚箭矢，對首名命中的敵人造成200%傷害，並穿透路徑上所有敵人，穿透後傷害降為100%。箭矢飛行距離無上限。",
+      "朝指定方向射出一枚箭矢，對首名命中的敵人造成200%傷害，並穿透路徑上所有敵人，穿透後傷害降為100%。箭矢飛行距離無上限。"
+    ],
+    "weaponRestriction": "ranged",
+    "skillPointType": "B"
+  },
+  {
+    "id": "mana_burst",
+    "name": "魔爆",
+    "castTime": 0.5,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "✨",
+    "descriptions": [
+      "引爆自身周圍能量，對範圍內所有敵人造成150%傷害。能量消耗2點。",
+      "引爆自身周圍能量，對範圍內所有敵人造成150%傷害。作用範圍提升15%。能量消耗2點。",
+      "引爆自身周圍能量，對範圍內所有敵人造成150%傷害。作用範圍提升15%，施法速度提升。能量消耗2點。",
+      "引爆自身周圍能量，對範圍內所有敵人造成150%傷害。作用範圍提升15%，施法速度提升。若此技能擊殺敵人，目標將會爆炸，對其周圍小範圍內敵人造成100%傷害。能量消耗2點。",
+      "引爆自身周圍能量，對範圍內所有敵人造成150%傷害。作用範圍提升15%，施法速度提升。若此技能擊殺敵人，目標將會爆炸，對其周圍小範圍內敵人造成100%傷害。能量消耗2點。"
+    ],
+    "weaponRestriction": "melee",
+    "skillPointType": "B"
+  },
+  {
+    "id": "light_pillar",
+    "name": "光柱",
+    "castTime": 0.1,
+    "recoveryTime": 0.1,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      2,
+      2,
+      2,
+      1,
+      1
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "🌟",
+    "descriptions": [
+      "持續引導，在前方召喚光柱，每0.5秒對範圍內最近的1名敵人造成70%傷害。能量消耗2點。",
+      "持續引導，在前方召喚光柱，每0.4秒對範圍內最近的1名敵人造成70%傷害。能量消耗2點。",
+      "持續引導，在前方召喚光柱，每0.4秒對範圍內最近的1名敵人造成70%傷害。能量消耗2點。",
+      "持續引導，在前方召喚光柱，每0.4秒對範圍內最近的1名敵人造成70%傷害。能量消耗1點。",
+      "持續引導，在前方召喚光柱，每0.4秒對範圍內所有敵人造成70%傷害。能量消耗1點。"
+    ],
+    "weaponRestriction": "medium",
+    "skillPointType": "B"
+  },
+  {
+    "id": "magic_missile",
+    "name": "魔彈",
+    "castTime": 0.15,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "☄️",
+    "descriptions": [
+      "釋放2枚追蹤魔彈，每枚造成60%傷害。後續命中同一目標的魔彈傷害衰減至20%。魔彈持續8秒。能量消耗2點。",
+      "釋放3枚追蹤魔彈，每枚造成60%傷害。後續命中同一目標的魔彈傷害衰減至20%。魔彈持續8秒。能量消耗2點。",
+      "釋放3枚追蹤魔彈，每枚造成60%傷害。後續命中同一目標的魔彈傷害衰減至50%。魔彈持續8秒。能量消耗2點。",
+      "釋放3枚追蹤魔彈，每枚造成60%傷害。後續命中同一目標的魔彈傷害衰減至50%。魔彈飛行速度提升200%，持續16秒。能量消耗2點。",
+      "釋放3枚追蹤魔彈，每枚造成60%傷害。後續命中同一目標的魔彈傷害衰減至50%。魔彈飛行速度提升200%，持續16秒。能量消耗2點。"
+    ],
+    "weaponRestriction": "ranged",
+    "skillPointType": "B"
+  },
+  {
+    "id": "multi_strike",
+    "name": "間擊",
+    "castTime": 0.1,
+    "recoveryTime": 0.05,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "🤺",
+    "descriptions": [
+      "對單一目標發動3次攻擊，每次造成20%傷害。能量消耗2點。",
+      "對單一目標發動5次攻擊，每次造成20%傷害。能量消耗2點。",
+      "對單一目標發動5次攻擊，每次造成20%傷害。3秒內連續施放此技能可疊加增益效果，最多5層，每層提升5%物理與魔法傷害，持續3秒。能量消耗2點。",
+      "對單一目標發動5次攻擊，每次造成30%傷害。3秒內連續施放此技能可疊加增益效果，最多5層，每層提升5%物理與魔法傷害，持續3秒。能量消耗2點。",
+      "對單一目標發動5次攻擊，每次造成30%傷害。3秒內連續施放此技能可疊加增益效果，最多5層，每層提升5%物理與魔法傷害，持續3秒。能量消耗2點。"
+    ],
+    "weaponRestriction": "melee",
+    "skillPointType": "B"
+  },
+  {
+    "id": "mixed_darts",
+    "name": "混標",
+    "castTime": 0.15,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      3,
+      2,
+      2,
+      2,
+      2
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "🎯",
+    "descriptions": [
+      "朝前方扇形區域投擲3枚飛鏢，每枚造成75%混合傷害。能量消耗3點。",
+      "朝前方扇形區域投擲3枚飛鏢，每枚造成75%混合傷害。能量消耗2點。",
+      "朝前方扇形區域投擲3枚飛鏢，每枚造成75%混合傷害。飛鏢飛行距離提升15%。能量消耗2點。",
+      "朝前方扇形區域投擲5枚飛鏢，每枚造成75%混合傷害。扇形區域擴大，飛鏢飛行距離提升15%。能量消耗2點。",
+      "朝前方扇形區域投擲5枚飛鏢，每枚造成75%混合傷害。扇形區域擴大，飛鏢飛行距離提升15%。能量消耗2點。"
+    ],
+    "weaponRestriction": "medium",
+    "skillPointType": "B"
+  },
+  {
+    "id": "star_scatter",
+    "name": "寰宇",
+    "castTime": 0.25,
+    "recoveryTime": 0.15,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_active",
+    "energyCost": [
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "active",
+    "icon": "🌌",
+    "descriptions": [
+      "向周圍散播3枚星粒，每枚初始造成25%傷害，最多彈射5次。每次彈射使該星粒傷害提升15%。若無可彈射目標則星粒消失。能量消耗5點。",
+      "向周圍散播3枚星粒，每枚初始造成25%傷害，最多彈射5次。每次彈射使該星粒傷害提升25%。若無可彈射目標則星粒消失。能量消耗5點。",
+      "向周圍散播3枚星粒，每枚初始造成25%傷害，最多彈射8次。每次彈射使該星粒傷害提升25%。若無可彈射目標則星粒消失。能量消耗5點。",
+      "向周圍散播5枚星粒，每枚初始造成25%傷害，最多彈射8次。每次彈射使該星粒傷害提升25%。若無可彈射目標則星粒消失。能量消耗5點。",
+      "向周圍散播5枚星粒，每枚初始造成25%傷害，最多彈射8次。每次彈射使該星粒傷害提升25%。若無可彈射目標則星粒消失。能量消耗5點。"
+    ],
+    "weaponRestriction": "ranged",
+    "skillPointType": "B"
+  },
+  {
+    "id": "battle_roar",
+    "name": "戰吼",
+    "castTime": 0,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_passive",
+    "energyCost": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "passive",
+    "icon": "🗣️",
+    "descriptions": [
+      "提升5%爆擊率。",
+      "提升7%爆擊率。",
+      "提升9%爆擊率。",
+      "提升12%爆擊率。",
+      "提升15%爆擊率。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "insight",
+    "name": "看破",
+    "castTime": 0,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_passive",
+    "energyCost": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "passive",
+    "icon": "👁️",
+    "descriptions": [
+      "提升5%無視防禦。",
+      "提升7%無視防禦。",
+      "提升9%無視防禦。",
+      "提升12%無視防禦。",
+      "提升15%無視防禦。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "proficiency",
+    "name": "熟練",
+    "castTime": 0,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_passive",
+    "energyCost": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "passive",
+    "icon": "🏆",
+    "descriptions": [
+      "提升100傷害穩定值。",
+      "提升200傷害穩定值。",
+      "提升300傷害穩定值。",
+      "提升400傷害穩定值。",
+      "提升500傷害穩定值。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "vitality_boost",
+    "name": "生命強化的心得",
+    "castTime": 0,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_passive",
+    "energyCost": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "passive",
+    "icon": "❤️‍🩹",
+    "descriptions": [
+      "提升10%最大生命值。",
+      "提升15%最大生命值。",
+      "提升20%最大生命值。",
+      "提升30%最大生命值。",
+      "提升50%最大生命值。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "energy_boost",
+    "name": "能量強化的心得",
+    "castTime": 0,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_passive",
+    "energyCost": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cooldown": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": "passive",
+    "icon": "🔋",
+    "descriptions": [
+      "提升5點最大能量值。",
+      "提升10點最大能量值。",
+      "提升15點最大能量值。",
+      "提升20點最大能量值。",
+      "提升30點最大能量值。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "restrain",
+    "name": "拘束之源",
+    "castTime": 0.2,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_common",
+    "energyCost": [
+      30,
+      30,
+      30,
+      30,
+      30
+    ],
+    "cooldown": [
+      90,
+      90,
+      60,
+      60,
+      60
+    ],
+    "type": "active",
+    "icon": "⛓️",
+    "descriptions": [
+      "使目標敵人陷入拘束狀態，持續5秒。冷卻時間90秒，能量消耗30點。",
+      "使目標敵人陷入拘束狀態，持續8秒。冷卻時間90秒，能量消耗30點。",
+      "使目標敵人陷入拘束狀態，持續8秒。冷卻時間60秒，能量消耗30點。",
+      "使目標敵人陷入拘束狀態，持續8秒。此技能施加拘束時，目標的拘束抗性效果減半。冷卻時間60秒，能量消耗30點。",
+      "使目標敵人陷入拘束狀態，持續8秒。此技能施加拘束時，目標的拘束抗性效果減半。冷卻時間60秒，能量消耗30點。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "dash",
+    "name": "衝刺",
+    "castTime": 0.2,
+    "recoveryTime": 0.1,
+    "maxLevel": 5,
+    "category": "basic_common",
+    "animation": null,
+    "energyCost": [
+      5,
+      5,
+      3,
+      3,
+      3
+    ],
+    "cooldown": [
+      10,
+      5,
+      5,
+      5,
+      5
+    ],
+    "type": "active",
+    "icon": "💨",
+    "descriptions": [
+      "朝指定方向衝刺一段距離。衝刺距離提升。冷卻時間10秒，能量消耗5點。",
+      "朝指定方向衝刺一段距離。衝刺距離提升。冷卻時間5秒，能量消耗5點。",
+      "朝指定方向衝刺一段距離。衝刺距離提升。冷卻時間5秒，能量消耗3點。",
+      "朝指定方向衝刺一段距離，期間獲得無敵狀態。衝刺距離提升。冷卻時間5秒，能量消耗3點。",
+      "朝指定方向衝刺一段距離，期間獲得無敵狀態。衝刺距離提升。冷卻時間5秒，能量消耗3點。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "divine_shield",
+    "name": "神盾",
+    "castTime": 0.35,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_common",
+    "energyCost": [
+      15,
+      15,
+      10,
+      10,
+      10
+    ],
+    "cooldown": [
+      30,
+      20,
+      20,
+      20,
+      20
+    ],
+    "type": "active",
+    "icon": "🛡️",
+    "descriptions": [
+      "獲得一個護盾，能吸收等同於自身最大生命值50%的傷害，持續15秒。冷卻時間30秒，能量消耗15點。",
+      "獲得一個護盾，能吸收等同於自身最大生命值50%的傷害，持續15秒。冷卻時間20秒，能量消耗15點。",
+      "獲得一個護盾，能吸收等同於自身最大生命值50%的傷害，持續15秒。冷卻時間20秒，能量消耗10點。",
+      "獲得一個護盾，能吸收等同於自身最大生命值100%的傷害，持續15秒。冷卻時間20秒，能量消耗10點。",
+      "獲得一個護盾，能吸收等同於自身最大生命值100%的傷害，持續15秒。冷卻時間20秒，能量消耗10點。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  },
+  {
+    "id": "emergency_heal",
+    "name": "緊急回復",
+    "castTime": 0.35,
+    "recoveryTime": 0,
+    "maxLevel": 5,
+    "animation": null,
+    "category": "basic_common",
+    "energyCost": [
+      25,
+      25,
+      15,
+      15,
+      15
+    ],
+    "cooldown": [
+      30,
+      20,
+      20,
+      20,
+      20
+    ],
+    "type": "active",
+    "icon": "⚕️",
+    "descriptions": [
+      "立即恢復自身最大生命值的35%。冷卻時間30秒，能量消耗25點。",
+      "立即恢復自身最大生命值的35%。冷卻時間20秒，能量消耗25點。",
+      "立即恢復自身最大生命值的35%。冷卻時間20秒，能量消耗15點。",
+      "立即恢復自身最大生命值的50%。冷卻時間20秒，能量消耗15點。",
+      "立即恢復自身最大生命值的50%。冷卻時間20秒，能量消耗15點。"
+    ],
+    "weaponRestriction": "any",
+    "skillPointType": "B"
+  }
+]

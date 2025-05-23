@@ -1,0 +1,77 @@
+{
+  "id": "sand_square",
+  "name": "沙廣場",
+  "width": 1600,
+  "height": 1600,
+  "tileSize": 50,  "backgroundColor": "#8BBA9C",
+  "grid": {
+    "visible": true,
+    "type": "sand"
+  },"objects": [
+    {
+      "id": "player_spawn",
+      "type": "spawn_point",
+      "graph": "",
+      "solid": false,
+      "x": 400,
+      "y": 300,
+      "width": 0,
+      "height": 0
+    },
+    {
+      "id": "tree1",
+      "type": "obstacle",
+      "graph": "tree",
+      "solid": true,
+      "x": 200,
+      "y": 150,
+      "width": 40,
+      "height": 40
+    },
+    {
+      "id": "tree2",
+      "type": "obstacle",
+      "graph": "tree",
+      "solid": true,
+      "x": 600,
+      "y": 200,
+      "width": 40,
+      "height": 40
+    },
+    {
+      "id": "bush1",
+      "type": "decoration",
+      "graph": "bush",
+      "solid": false,
+      "x": 300,
+      "y": 400,
+      "width": 30,
+      "height": 30
+    },    {
+      "id": "bush2",
+      "type": "decoration",
+      "graph": "bush",
+      "solid": false,
+      "x": 500,
+      "y": 450,
+      "width": 30,
+      "height": 30
+    },
+    {
+      "id": "town_portal",
+      "type": "teleporter",
+      "graph": "teleporter",
+      "solid": false,
+      "x": 800,
+      "y": 500,
+      "width": 50,
+      "height": 50,
+      "properties": {
+        "targetMap": "town_square",
+        "targetX": 400,
+        "targetY": 300
+      }
+    }
+
+  ]
+}

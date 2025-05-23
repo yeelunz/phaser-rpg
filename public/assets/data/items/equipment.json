@@ -1,0 +1,110 @@
+{
+  "items": [
+    {
+      "id": "wt",
+      "name": "鋼鐵長劍",
+      "description": "一把堅固耐用的長劍，適合新手使用。",
+      "type": "equipment",
+      "icon": "🗡️",
+      "value": 100,
+      "levelRequirement": 1,
+      "bonusStats": {
+        "physicalAttack": 15,
+        "accuracy": 5,
+        "critRate": 0.02,
+        "damageStability": 500
+      },
+      "attackSpeed":1.2,
+      "enhanceLimit": 5,
+      "slot": "weapon",
+      "range": "melee",
+      "rarity": "common"
+    },
+    {
+      "id": "weapon_002",
+      "name": "精靈弓",
+      "description": "由精靈工匠打造的弓箭，輕巧但有力。",
+      "type": "equipment",
+      "icon": "🏹",
+      "value": 150,
+      "levelRequirement": 3,
+      "bonusStats": {
+        "physicalAttack": 12,
+        "accuracy": 10,
+        "critRate": 0.05,
+        "evasion": 2
+      },
+      "attackSpeed":1.2,
+      "enhanceLimit": 6,
+      "slot": "weapon",
+      "range": "long",
+      "rarity": "common"
+    },
+    {
+      "id": "armor_001",
+      "name": "皮革護甲",
+      "description": "由堅韌皮革製作的輕型護甲，提供基本防護。",
+      "type": "equipment",
+      "icon": "🛡️",
+      "value": 80,
+      "levelRequirement": 1,
+      "bonusStats": {
+        "physicalDefense": 1000,
+        "energyRecovery": 550,
+        "hp": 20
+      },
+      "enhanceLimit": 5,
+      "slot": "armor",
+      "rarity": "common"
+    },
+    {
+      "id": "boots_001",
+      "name": "探險者靴",
+      "description": "舒適耐用的皮靴，適合長途跋涉。",
+      "type": "equipment",
+      "icon": "👢",
+      "value": 50,
+      "levelRequirement": 1,
+      "bonusStats": {
+        "moveSpeed": 5,
+        "evasion": 3
+      },
+      "enhanceLimit": 3,
+      "slot": "boots",
+      "rarity": "common"
+    },
+    {
+      "id": "ring_001",
+      "name": "力量戒指",
+      "description": "蘊含力量魔法的戒指，增強佩戴者的攻擊力。",
+      "type": "equipment",
+      "icon": "💍",
+      "value": 120,
+      "levelRequirement": 5,
+      "bonusStats": {
+        "physicalAttack": 8,
+        "physicalPenetration": 5
+      },
+      "enhanceLimit": 4,
+      "slot": "ring",
+      "rarity": "common"
+    },
+    {
+      "id": "necklace_001",
+      "name": "智慧項鍊",
+      "description": "增強施法能力的項鍊，散發微弱的藍光。",
+      "type": "equipment",
+      "icon": "📿",
+      "value": 130,
+      "levelRequirement": 5,
+      "bonusStats": {
+        "magicAttack": 10,
+        "energy": 15,
+        "energyRecovery": 5
+      },
+      "enhanceLimit": 4,
+      "slot": "necklace",
+      "rarity": "common"
+    }
+  ]
+}

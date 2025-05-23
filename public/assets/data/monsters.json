@@ -1,0 +1,146 @@
+[
+    {
+        "id": "goblin_scout_001",
+        "name": "哥布林斥候",
+        "baseStats": {
+            "level": 2,
+            "hp": 120,
+            "energy": 60,
+            "physicalAttack": 12,
+            "physicalDefense": 8,
+            "magicAttack": 3,
+            "magicDefense": 5,
+            "accuracy": 105,
+            "evasion": 10,
+            "physicalPenetration": 3,
+            "magicPenetration": 1,
+            "absoluteDamageReduction": 0,
+            "magicDamageBonus": 0,
+            "physicalDamageBonus": 2,
+            "defenseIgnore": 0,
+            "moveSpeed": 110,
+            "critRate": 0,
+            "damageStability": 290,
+            "vulnerability": 0,
+            "resistance": 0,
+            "energyRecovery": 90
+        },
+        "category": "monster",
+        "movementPattern": "patrol_and_chase",
+        "attackPattern": null,
+        "complexBehaviorId": null,
+        "experienceYield": 15,
+        "isSolid": true,
+         "sprite":null,
+        "collisionBox": {
+            "width": 28,
+            "height": 45
+        },
+        "hitBox": {
+            "width": 50,
+            "height": 40
+        },
+        "icon": "👺",
+        "drops": [
+            { "itemId": "goblin_ear_001", "quantity": 1, "chance": 0.6 },
+            { "itemId": "small_health_potion_001", "quantity": 1, "chance": 0.05 }
+        ],
+        "goldDrop": 8
+    },
+    {
+        "id": "dire_wolf_001",
+        "name": "兇暴野狼",
+        "baseStats": {
+            "level": 4,
+            "hp": 200,
+            "energy": 0,
+            "physicalAttack": 20,
+            "physicalDefense": 15,
+            "magicAttack": 0,
+            "magicDefense": 10,
+            "accuracy": 120,
+            "evasion": 5,
+            "physicalPenetration": 8,
+            "magicPenetration": 0,
+            "absoluteDamageReduction": 0,
+            "magicDamageBonus": 0,
+            "physicalDamageBonus": 8,
+            "defenseIgnore": 2,
+            "moveSpeed": 130,
+            "critRate": 0,
+            "damageStability": 310,
+            "vulnerability": 0,
+            "resistance": 0,
+            "energyRecovery": 0
+        },
+        "category": "monster",
+        "movementPattern": "aggressive_chase",
+        "attackPattern": null,
+        "complexBehaviorId": null,
+        "experienceYield": 35,
+        "isSolid": true,
+        "sprite":null,
+        "collisionBox": {
+            "width": 50,
+            "height": 40
+        },
+        "hitBox": {
+            "width": 50,
+            "height": 40
+        },
+        "icon": "🐺",
+        "drops": [
+            { "itemId": "wolf_pelt_001", "quantity": 1, "chance": 0.7 },
+            { "itemId": "sharp_fang_001", "quantity": 2, "chance": 0.25 }
+        ],
+        "goldDrop": 15
+    },
+    {
+        "id": "stone_guardian_001",
+        "name": "石像守衛",
+        "baseStats": {
+            "level": 5,
+            "hp": 350,
+            "energy": 80,
+            "physicalAttack": 25,
+            "physicalDefense": 30,
+            "magicAttack": 0,
+            "magicDefense": 15,
+            "accuracy": 90,
+            "evasion": 0,
+            "physicalPenetration": 5,
+            "magicPenetration": 0,
+            "absoluteDamageReduction": 5,
+            "magicDamageBonus": 0,
+            "physicalDamageBonus": 10,
+            "defenseIgnore": 0,
+            "moveSpeed": 0,
+            "critRate": 0.5,
+            "damageStability": 320,
+            "vulnerability": 0,
+            "resistance": 10,
+            "energyRecovery": 50
+        },
+        "category": "elite",
+        "movementPattern": "stationary",
+        "attackPattern": "melee",
+        "complexBehaviorId": null,
+        "experienceYield": 50,
+        "isSolid": true,
+        "sprite": null,
+        "collisionBox": {
+            "width": 60,
+            "height": 60
+        },
+        "hitBox": {
+            "width": 150,
+            "height": 150
+        },
+        "icon": "🗿",
+        "drops": [
+            { "itemId": "stone_fragment_001", "quantity": 3, "chance": 0.8 },
+            { "itemId": "guardian_essence_001", "quantity": 1, "chance": 0.3 }
+        ],
+        "goldDrop": 25
+    }
+]

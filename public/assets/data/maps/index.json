@@ -1,0 +1,15 @@
+{
+  "maps": [
+    {
+      "id": "town_square",
+      "name": "鎮中心廣場",
+      "description": "遊戲起始地點，平和的小鎮中心。"
+    },
+    {
+      "id": "north_forest",
+      "name": "北方森林",
+      "description": "位於小鎮北方的神秘森林。"
+    }
+  ],
+  "defaultMap": "town_square"
+}

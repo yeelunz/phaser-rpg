@@ -1,0 +1,95 @@
+{
+  "items": [
+    {
+      "id": "consumable_001",
+      "name": "小型治療藥水",
+      "description": "恢復少量生命值的紅色藥水。",
+      "icon": "🧪",
+      "stackable": true,
+      "value": 25,
+      "type": "consumable",
+      "consumeType": "immediate",
+      "attribute": "heal",
+      "effectValue": 50,
+      "duration": 0
+    },
+    {
+      "id": "consumable_002",
+      "name": "中型治療藥水",
+      "description": "恢復中量生命值的紅色藥水。",
+      "icon": "🧪",
+      "stackable": true,
+      "value": 75,
+      "type": "consumable",
+      "consumeType": "immediate",
+      "attribute": "heal",
+      "effectValue": 150,
+      "duration": 0
+    },
+    {
+      "id": "consumable_003",
+      "name": "小型能量藥水",
+      "description": "恢復少量魔法能量的藍色藥水。",
+      "icon": "🧪",
+      "stackable": true,
+      "value": 30,
+      "type": "consumable",
+      "consumeType": "immediate",
+      "attribute": "heal",
+      "effectValue": 40,
+      "duration": 0
+    },
+    {
+      "id": "consumable_004",
+      "name": "力量增強藥劑",
+      "description": "暫時提升物理攻擊力的藥劑。",
+      "icon": "⚗️",
+      "stackable": true,
+      "value": 120,
+      "type": "consumable",
+      "consumeType": "overtime",
+      "attribute": "buff",
+      "effectValue": 25,
+      "duration": 60
+    },
+    {
+      "id": "consumable_005",
+      "name": "速度藥劑",
+      "description": "暫時提升移動速度的藥劑。",
+      "icon": "⚗️",
+      "stackable": true,
+      "value": 100,
+      "type": "consumable",
+      "consumeType": "overtime",
+      "attribute": "buff",
+      "effectValue": 30,
+      "duration": 45
+    },
+    {
+      "id": "consumable_006",
+      "name": "炸彈",
+      "description": "投擲後對小範圍內的敵人造成傷害。",
+      "icon": "💣",
+      "stackable": true,
+      "value": 60,
+      "type": "consumable",
+      "consumeType": "immediate",
+      "attribute": "damage",
+      "effectValue": 100,
+      "duration": 0
+    },
+    {
+      "id": "consumable_007",
+      "name": "傳送卷軸",
+      "description": "立即返回上一個安全點。",
+      "icon": "📜",
+      "stackable": true,
+      "value": 200,
+      "type": "consumable",
+      "consumeType": "special",
+      "attribute": "",
+      "effectValue": 0,
+      "duration": 0
+    }
+  ]
+}

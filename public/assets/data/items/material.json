@@ -1,0 +1,58 @@
+{
+  "items": [
+    {
+      "id": "material_001",
+      "name": "鐵礦石",
+      "description": "普通的鐵礦石，可用於基礎裝備製作。",
+      "icon": "🪨",
+      "stackable": true,
+      "value": 10,
+      "type": "material"
+    },
+    {
+      "id": "material_002",
+      "name": "精靈木材",
+      "description": "來自精靈森林的稀有木材，具有強韌且輕盈的特性。",
+      "icon": "🪵",
+      "stackable": true,
+      "value": 30,
+      "type": "material"
+    },
+    {
+      "id": "material_003",
+      "name": "魔法水晶",
+      "description": "含有魔法能量的水晶，是高級魔法裝備的重要材料。",
+      "icon": "💎",
+      "stackable": true,
+      "value": 75,
+      "type": "material"
+    },
+    {
+      "id": "material_004",
+      "name": "龍鱗",
+      "description": "從龍身上掉落的鱗片，堅硬無比，可製作頂級防具。",
+      "icon": "🔶",
+      "stackable": true,
+      "value": 200,
+      "type": "material"
+    },
+    {
+      "id": "material_005",
+      "name": "治療草藥",
+      "description": "常見的藥用植物，可製作基礎治療藥水。",
+      "icon": "🌿",
+      "stackable": true,
+      "value": 15,
+      "type": "material"
+    },
+    {
+      "id": "material_006",
+      "name": "魔法粉塵",
+      "description": "從魔法生物身上收集的閃亮粉塵，用於魔法強化。",
+      "icon": "✨",
+      "stackable": true,
+      "value": 50,
+      "type": "material"
+    }
+  ]
+}
