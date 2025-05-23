@@ -129,6 +129,7 @@ export class StandardDamageBehavior extends BaseProjectileBehavior {
 
             // 如果沒有找到 monster ID，則依次嘗試其他方法
             if (!targetId) {
+                console.log(`[StandardDamageBehavior] !targetId: ${targetId}`);
                 if (target.getInstanceId && typeof target.getInstanceId === 'function') {
                     targetId = target.getInstanceId();
                 } else if (typeof target.getId === 'function') {
@@ -143,8 +144,8 @@ export class StandardDamageBehavior extends BaseProjectileBehavior {
                     console.warn('[StandardDamageBehavior] 無法找到有效的目標ID，生成臨時ID');
                     targetId = "tmp_" + Math.random().toString(36).substring(2, 15);
                 }
-            }
-
+            }    
+      
             const damageType = this.damageType || projectile.getAttribute('damageType') || 'physical';
             const sourceEntityId = projectile.getSourceEntityId();
             
@@ -152,8 +153,9 @@ export class StandardDamageBehavior extends BaseProjectileBehavior {
                 console.error(`[StandardDamageBehavior] 投射物沒有有效的來源實體ID: ${projectile.getId()}`);
                 return;
             }
-
-            // 觸發傷害事件
+            
+            // 使用SkillProjectile的方法直接獲取施放者狀態的複製版本
+            const casterStatsCopy = projectile.getSourceEntityStatsCopy();// 觸發傷害事件
             this.eventManager.dispatchEvent({
                 type: SkillEventType.DAMAGE_DEALT,
                 skillId: projectile.getId(),
@@ -166,7 +168,8 @@ export class StandardDamageBehavior extends BaseProjectileBehavior {
                     damageType: damageType,
                     damageMultiplier: this.damageMultiplier,
                     hitIndex: 0,
-                    totalHits: 1
+                    totalHits: 1,
+                    casterStats: casterStatsCopy // 添加施放者狀態的複製版本
                 }
             });
 

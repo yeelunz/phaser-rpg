@@ -258,6 +258,37 @@ export class SkillProjectile {
     }
     
     /**
+     * 獲取施放者（源實體）狀態數據的深複製
+     * @returns 施放者狀態的複製版本或 null（如果無法獲取或複製）
+     */
+    public getSourceEntityStatsCopy(): any | null {
+        let casterStats = null;
+        const sourceEntity = this.getSourceEntity();
+        
+        // 嘗試獲取源實體的狀態數據
+        if (sourceEntity) {
+            if (sourceEntity.getStats && typeof sourceEntity.getStats === 'function') {
+                casterStats = sourceEntity.getStats();
+            } else if (sourceEntity.stats) {
+                casterStats = sourceEntity.stats;
+            }
+        }
+        
+        // 如果找到了狀態數據，進行深複製
+        if (casterStats) {
+            try {
+                return JSON.parse(JSON.stringify(casterStats));
+            } catch (err) {
+                console.warn(`[SkillProjectile ${this.id}] 無法複製施放者狀態數據:`, err);
+                // 如果無法深複製，則使用原始引用（不推薦，但作為備選）
+                return casterStats;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
      * 獲取創建時間
      */
     public getCreatedTime(): number {
