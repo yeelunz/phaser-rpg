@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { initializeBehaviors } from '../../core/monsters/behaviors/definitions';
 
 export class Preloader extends Scene
 {
@@ -38,6 +39,9 @@ export class Preloader extends Scene
         // 載入投射物相關資源
         this.createProjectileTextures();
         
+        // **新增：創建地圖圖塊材質**
+        this.createMapTileTextures();
+        
         // 設置加載錯誤處理
         this.load.on('loaderror', (fileObj: Phaser.Loader.File) => {
             console.warn('加載錯誤: ', fileObj.key);
@@ -71,6 +75,39 @@ export class Preloader extends Scene
         this.load.json('material_data', 'data/items/material.json');
     }
     
+    // **新增：創建地圖圖塊材質**
+    private createMapTileTextures(): void {
+        const tileSize = 32;
+
+        // 創建地板圖塊 (綠色)
+        const floorGraphics = this.add.graphics();
+        floorGraphics.fillStyle(0x65a825); // 綠色草地
+        floorGraphics.fillRect(0, 0, tileSize, tileSize);
+        floorGraphics.lineStyle(1, 0x558022);
+        floorGraphics.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+        floorGraphics.generateTexture('floor_tile', tileSize, tileSize);
+        floorGraphics.destroy();
+
+        // 創建牆壁圖塊 (灰色)
+        const wallGraphics = this.add.graphics();
+        wallGraphics.fillStyle(0x777777); // 灰色石牆
+        wallGraphics.fillRect(0, 0, tileSize, tileSize);
+        wallGraphics.lineStyle(1, 0x555555);
+        wallGraphics.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+        // 添加一些紋理細節
+        wallGraphics.lineStyle(1, 0x888888);
+        wallGraphics.beginPath();
+        wallGraphics.moveTo(0, 0);
+        wallGraphics.lineTo(tileSize, tileSize);
+        wallGraphics.moveTo(tileSize, 0);
+        wallGraphics.lineTo(0, tileSize);
+        wallGraphics.strokePath();
+        wallGraphics.generateTexture('wall_tile', tileSize, tileSize);
+        wallGraphics.destroy();
+
+        console.log('[Preloader] 成功創建地圖圖塊材質');
+    }
+    
     // 創建臨時的替代紋理
     createFallbackTexture(key: string) {
         const colors: { [key: string]: number } = {
@@ -79,7 +116,9 @@ export class Preloader extends Scene
             'player_up': 0xFFFF00,
             'player_left': 0xFF0000,
             'player_right': 0x00FF00,
-            'terrain_tiles': 0x888888
+            'terrain_tiles': 0x888888,
+            'floor_tile': 0x65a825,
+            'wall_tile': 0x777777
         };
         
         // 創建一個臨時的圖形對象
@@ -97,6 +136,11 @@ export class Preloader extends Scene
                 graphics.lineTo(128, i);
             }
             graphics.strokePath();
+        } else if (key === 'floor_tile' || key === 'wall_tile') {
+            // 為地圖圖塊創建簡單紋理
+            graphics.fillRect(0, 0, 32, 32);
+            graphics.lineStyle(1, 0x000000);
+            graphics.strokeRect(0, 0, 32, 32);
         } else {
             // 為玩家創建一個簡單的方塊
             graphics.fillRect(0, 0, 32, 32);
@@ -118,7 +162,8 @@ export class Preloader extends Scene
         }
         
         // 生成紋理並釋放圖形
-        graphics.generateTexture(key, key === 'terrain_tiles' ? 128 : 32, key === 'terrain_tiles' ? 128 : 32);
+        const size = (key === 'terrain_tiles') ? 128 : 32;
+        graphics.generateTexture(key, size, size);
         graphics.destroy();
         
         console.log(`為 ${key} 創建了替代紋理`);
@@ -155,6 +200,9 @@ export class Preloader extends Scene
     {
         //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
         //  For example, you can define global animations here, so we can use them in other scenes.
+
+        // 初始化怪物行為系統
+        initializeBehaviors();
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');

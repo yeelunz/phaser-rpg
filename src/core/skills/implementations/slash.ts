@@ -70,6 +70,7 @@ class SlashImplementation implements SkillImplementation {
         console.log(`[Slash] 設置源實體ID: ${playerId}`);
 
         // 為了向後兼容，同時設置為屬性
+        // 最後的傷害類型將由 StandardDamageBehavior 決定 而非投射物本身的 damageType
         slashProjectile.setAttribute('sourceEntityId', playerId);        // 設置靜態行為 - 斬擊不移動，只在原地生成效果
         const staticMovement = new StaticMovementBehavior();        // 設置傷害行為 - 使用 StandardDamageBehavior
         const damageBehavior = new StandardDamageBehavior(
@@ -77,7 +78,7 @@ class SlashImplementation implements SkillImplementation {
             1,                     // 單段傷害
             0,                     // 無間隔
             3,                     // 最多攻擊3個目標
-            'hybrid'             // 傷害類型
+            'mixed'             // 傷害類型
         );
           // 設置搜索過濾器 - 圓形搜索區域
         // 使用 setSearchFilter 而不是 setAttribute('targetFilter', ...)

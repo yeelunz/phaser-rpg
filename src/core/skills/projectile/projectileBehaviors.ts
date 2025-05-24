@@ -42,7 +42,7 @@ export class StandardDamageBehavior extends BaseProjectileBehavior {
     
     /**
      * 搜尋並傷害目標的方法 - 讓實體搜索系統處理所有的搜尋邏輯
-     */    private findAndDamageTargets(projectile: SkillProjectile, specificTarget?: any): void {
+     */   private findAndDamageTargets(projectile: SkillProjectile, specificTarget?: any): void {
         console.log(`[StandardDamageBehavior] findAndDamageTargets - 投射物 ID: ${projectile.getId()}`);
         console.log(`[StandardDamageBehavior] 來源實體ID: ${projectile.getSourceEntityId()}`);
         
@@ -77,23 +77,63 @@ export class StandardDamageBehavior extends BaseProjectileBehavior {
         const position = projectile.position;
         let targets: any[] = [];
         
-        // 根據搜索區域類型獲取目標 所有目標都應該要從實體搜索系統獲取
-        // 這是統一流程，禁止直接從碰撞檢測中獲取目標，任何欲進行傷害發送的目標，都應該從實體搜索系統獲取 
+        // 根據搜索區域類型獲取目標 所有目標都應該要從實體搜索系統獲取        // 這是統一流程，禁止直接從碰撞檢測中獲取目標，任何欲進行傷害發送的目標，都應該從實體搜索系統獲取 
         if (searchFilter.area) {
             const area = searchFilter.area;
             console.log(`[StandardDamageBehavior] 使用搜索系統執行區域搜索: ${area.type}`);
             
+            // 準備搜索參數
+            let searchParams: any = { position: position };
+            
+            // 根據搜索區域類型設置參數
+            switch (area.type) {
+                case SearchAreaShape.CIRCLE:
+                    searchParams.radius = (area as any).radius;
+                    break;
+                    
+                case SearchAreaShape.RECTANGLE:
+                    searchParams.width = (area as any).width;
+                    searchParams.height = (area as any).height;
+                    searchParams.rotation = (area as any).angle;
+                    break;
+                    
+                case SearchAreaShape.SECTOR:
+                    searchParams.radius = (area as any).radius;
+                    searchParams.startAngle = (area as any).startAngle;
+                    searchParams.endAngle = (area as any).endAngle;
+                    break;
+                    
+                case SearchAreaShape.LINE:
+                    const lineArea = area as any;
+                    const length = lineArea.length || 100;
+                    const angle = lineArea.angle || 0;
+                    const width = lineArea.width || 10;
+                    
+                    // 將角度轉換為弧度
+                    const angleRad = angle * Math.PI / 180;
+                    
+                    // 計算線段的起點和終點
+                    // 起點是當前位置，終點根據長度和角度計算
+                    const startPos = { x: position.x, y: position.y };
+                    const endPos = {
+                        x: position.x + Math.cos(angleRad) * length,
+                        y: position.y + Math.sin(angleRad) * length
+                    };
+                    
+                    searchParams.startPos = startPos;
+                    searchParams.endPos = endPos;
+                    searchParams.width = width; // 線條厚度
+                    
+                    console.log(`[StandardDamageBehavior] 線形搜索參數: startPos=${JSON.stringify(startPos)}, endPos=${JSON.stringify(endPos)}, width=${width}`);
+                    break;
+                      default:
+                    console.warn(`[StandardDamageBehavior] 未知的搜索區域類型: ${(area as any).type}`);
+                    break;
+            }
+            
             targets = this.entitySearchSystem.search(
                 area.type,
-                {
-                    position: position,
-                    radius: area.type === SearchAreaShape.CIRCLE ? (area as any).radius : undefined,
-                    width: area.type === SearchAreaShape.RECTANGLE ? (area as any).width : undefined,
-                    height: area.type === SearchAreaShape.RECTANGLE ? (area as any).height : undefined,
-                    rotation: area.type === SearchAreaShape.RECTANGLE ? (area as any).angle : undefined,
-                    startAngle: area.type === SearchAreaShape.SECTOR ? (area as any).startAngle : undefined,
-                    endAngle: area.type === SearchAreaShape.SECTOR ? (area as any).endAngle : undefined
-                },
+                searchParams,
                 searchFilter,
                 selector
             );

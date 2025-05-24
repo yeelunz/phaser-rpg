@@ -76,9 +76,15 @@ export interface MonsterData {
     name: string;
     baseStats: MonsterStats;
     category: MonsterCategory;
-    movementPattern: MovementPattern | null;
-    attackPattern: AttackPattern | null;
-    complexBehaviorId: string | null;
+    
+    // 舊行為系統 (將被移除)
+    movementPattern?: MovementPattern | null;
+    attackPattern?: AttackPattern | null;
+    complexBehaviorId?: string | null;
+    
+    // 新行為系統
+    behaviorId?: string;
+    
     experienceYield: number;
     isSolid: boolean;
     sprite: string | null;

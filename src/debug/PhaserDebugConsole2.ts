@@ -176,15 +176,13 @@ export class PhaserDebugConsole2 {
                     break;
                 case 'itemlist':
                     this.listAllItems();
-                    break;
-                case 'clear':
+                    break;                case 'clear':
                     this.clearOutput();
-                    break;
-                case 'debug':
-                    this.toggleDebugMode(args);
-                    break;
-                case 'projectile':
+                    break;                case 'projectile':
                     this.toggleProjectileDebugMode(args);
+                    break;
+                case 'monster':
+                    this.toggleMonsterDebugMode(args);
                     break;
                 default:
                     this.appendOutput(`未知命令: ${cmd}. 輸入 'help' 查看可用命令。`);
@@ -196,8 +194,7 @@ export class PhaserDebugConsole2 {
         }
     }    /**
      * 顯示幫助資訊
-     */
-    private showHelp(): void {        const helpText = [
+     */    private showHelp(): void {        const helpText = [
             "可用命令:",
             "help - 顯示此幫助信息",
             "hp [current/max] [value] - 設置或查看生命值",
@@ -208,9 +205,11 @@ export class PhaserDebugConsole2 {
             "item equip [id] - 裝備物品",
             "item unequip [slot] - 卸下裝備",
             "itemlist - 列出所有可用物品 ID",
-            "clear - 清除輸出",
-            "debug [on/off/boxes/collision/physics/hitbox] - 切換調試模式",
-            "projectile [hitbox/range/on/off] - 切換投射物調試模式"
+            "clear - 清除輸出",            "projectile [hitbox/range/on/off] - 切換投射物調試模式",
+            "monster [on/off] - 切換怪物除錯資訊顯示",
+            "",
+            "注意: 怪物碰撞框/物理框/打擊框除錯功能已移除",
+            "請使用 Phaser 內建除錯功能來檢視物理碰撞框"
         ];
         this.appendOutput(helpText.join('\n'));
     }
@@ -481,53 +480,7 @@ export class PhaserDebugConsole2 {
                 .catch(error => this.appendOutput(`無法加載材料數據: ${error}`));
         } catch (e) {
             this.appendOutput(`列出物品時出錯: ${e instanceof Error ? e.message : String(e)}`);
-        }
-    }
-
-    /**
-     * 切換調試模式
-     */    private toggleDebugMode(args: string[]): void {
-        if (!this.debugRenderer) {
-            this.appendOutput("調試渲染器未設置");
-            return;
-        }
-
-        if (args.length < 2) {
-            this.appendOutput(`用法: debug [on/off/boxes/collision/physics/hitbox]`);
-            return;
-        }
-
-        const mode = args[1].toLowerCase();
-        
-        if (mode === 'on') {
-            // 顯示所有調試框
-            this.debugRenderer.toggleAllBoxes(true);
-            this.appendOutput("調試模式已開啟，所有調試框已顯示");
-        } else if (mode === 'off') {
-            // 隱藏所有調試框
-            this.debugRenderer.toggleAllBoxes(false);
-            this.appendOutput("調試模式已關閉");
-        } else if (mode === 'boxes') {
-            // 切換所有調試框顯示狀態
-            this.appendOutput("碰撞框顯示: " + this.debugRenderer.toggleCollisionBoxes());
-            this.appendOutput("物理框顯示: " + this.debugRenderer.togglePhysicsBoxes());
-            this.appendOutput("打擊框顯示: " + this.debugRenderer.toggleHitBoxes());
-        } else if (mode === 'collision') {
-            // 切換碰撞框顯示
-            const enabled = this.debugRenderer.toggleCollisionBoxes();
-            this.appendOutput(`碰撞框顯示: ${enabled ? '開啟' : '關閉'}`);
-        } else if (mode === 'physics') {
-            // 切換物理框顯示
-            const enabled = this.debugRenderer.togglePhysicsBoxes();
-            this.appendOutput(`物理框顯示: ${enabled ? '開啟' : '關閉'}`);
-        } else if (mode === 'hitbox') {
-            // 切換打擊框顯示
-            const enabled = this.debugRenderer.toggleHitBoxes();
-            this.appendOutput(`打擊框顯示: ${enabled ? '開啟' : '關閉'}`);
-        } else {
-            this.appendOutput("用法: debug [on/off/boxes/collision/physics/hitbox]");
-        }
-    }
+        }    }
 
     /**
      * 切換投射物調試模式
@@ -560,9 +513,43 @@ export class PhaserDebugConsole2 {
         } else if (mode === 'range') {
             // 切換投射物搜索範圍
             const enabled = this.debugRenderer.toggleSearchRanges();
-            this.appendOutput(`技能搜索範圍顯示: ${enabled ? '開啟' : '關閉'}`);
-        } else {
+            this.appendOutput(`技能搜索範圍顯示: ${enabled ? '開啟' : '關閉'}`);        } else {
             this.appendOutput(`用法: projectile [hitbox/range/on/off]`);
+        }
+    }
+
+    /**
+     * 切換怪物除錯模式
+     */
+    private toggleMonsterDebugMode(args: string[]): void {
+        if (!this.debugRenderer) {
+            this.appendOutput("調試渲染器未設置");
+            return;
+        }
+
+        if (args.length < 2) {
+            this.appendOutput(`用法: monster [on/off]`);
+            return;
+        }
+
+        const mode = args[1].toLowerCase();
+        
+        if (mode === 'on') {
+            // 強制開啟怪物除錯
+            if (!this.debugRenderer.isMonsterDebugEnabled()) {
+                this.debugRenderer.toggleMonsterDebugInfo();
+            }
+            this.appendOutput("怪物除錯資訊已開啟");
+        } else if (mode === 'off') {
+            // 強制關閉怪物除錯
+            if (this.debugRenderer.isMonsterDebugEnabled()) {
+                this.debugRenderer.toggleMonsterDebugInfo();
+            }
+            this.appendOutput("怪物除錯資訊已關閉");
+        } else {
+            // 切換模式
+            const enabled = this.debugRenderer.toggleMonsterDebugInfo();
+            this.appendOutput(`怪物除錯資訊: ${enabled ? '開啟' : '關閉'}`);
         }
     }
 

@@ -7,7 +7,6 @@ export enum SearchAreaShape {
     CIRCLE = 'circle',       // 圓形範圍
     RECTANGLE = 'rectangle', // 矩形範圍
     SECTOR = 'sector',       // 扇形範圍
-    LINE = 'line',           // 線形範圍
     GLOBAL = 'global'        // 全局範圍
 }
 
@@ -39,10 +38,12 @@ export interface SectorSearchArea {
     endAngle: number;   // 相對於實體朝向的結束角度 (度)
 }
 
+
+
 /**
  * 搜索區域定義的聯合類型
  */
-export type SearchAreaDefinition = CircleSearchArea | RectangleSearchArea | SectorSearchArea;
+export type SearchAreaDefinition = CircleSearchArea | RectangleSearchArea | SectorSearchArea | LineSearchArea;
 
 /**
  * 實體類型
@@ -196,9 +197,7 @@ export class EntitySearchSystem {
 
         const filteredEntities = this.applyFilter(inRangeEntities, filter);
         return this.selectResults(filteredEntities, position, selector);
-    }
-
-    /**
+    }    /**
      * 在矩形範圍內搜索實體
      * @param position 矩形中心位置
      * @param width 寬度
@@ -216,41 +215,133 @@ export class EntitySearchSystem {
         filter?: EntitySearchFilter,
         selector?: EntityResultSelector
     ): any[] {
+        console.log(`[EntitySearchSystem] 開始矩形搜索 - 位置:(${position.x}, ${position.y}), 寬度:${width}, 高度:${height}, 旋轉:${rotation}弧度`);
+        
         const allEntities = this.getAllEntities();
+        
+        // 過濾在範圍內的實體 - 使用與圓形搜索相同的邏輯結構
         const inRangeEntities = allEntities.filter(entity => {
+            if (!entity) return false;
+
             const entityPos = this.getEntityPosition(entity);
+            if (!entityPos) return false;
 
-            if (rotation === 0) {
-                const halfWidth = width / 2;
-                const halfHeight = height / 2;
-                return (
-                    entityPos.x >= position.x - halfWidth &&
-                    entityPos.x <= position.x + halfWidth &&
-                    entityPos.y >= position.y - halfHeight &&
-                    entityPos.y <= position.y + halfHeight
-                );
-            } else {
-                const dx = entityPos.x - position.x;
-                const dy = entityPos.y - position.y;
+            // 獲取實體的物理邊界 - 與圓形搜索使用完全相同的邏輯
+            let entityBounds = {
+                width: 0,
+                height: 0
+            };
 
-                const cosA = Math.cos(-rotation);
-                const sinA = Math.sin(-rotation);
-                const rotatedX = dx * cosA - dy * sinA;
-                const rotatedY = dx * sinA + dy * cosA;
-
-                const halfWidth = width / 2;
-                const halfHeight = height / 2;
-                return (
-                    rotatedX >= -halfWidth &&
-                    rotatedX <= halfWidth &&
-                    rotatedY >= -halfHeight &&
-                    rotatedY <= halfHeight
-                );
+            if (entity.body) {
+                // 使用物理體的尺寸
+                entityBounds.width = entity.body.width;
+                entityBounds.height = entity.body.height;
+            } else if (entity.width && entity.height) {
+                // 使用實體本身的尺寸
+                entityBounds.width = entity.width;
+                entityBounds.height = entity.height;
+            } else if (entity.displayWidth && entity.displayHeight) {
+                // 使用顯示尺寸
+                entityBounds.width = entity.displayWidth;
+                entityBounds.height = entity.displayHeight;
             }
+            
+            // 如果實體的邊界框的任何部分與矩形相交,則視為在範圍內
+            const halfWidth = entityBounds.width / 2;
+            const halfHeight = entityBounds.height / 2;
+            
+            // 檢查實體邊界框與矩形是否相交
+            const inRange = this.isEntityBoundsIntersectRectangle(
+                entityPos, 
+                halfWidth, 
+                halfHeight, 
+                position, 
+                width / 2, 
+                height / 2, 
+                rotation
+            );
+
+            if (inRange) {
+                console.log(`[EntitySearchSystem] 實體在矩形範圍內 - 位置:(${entityPos.x}, ${entityPos.y})`);
+            }
+
+            return inRange;
         });
 
+        console.log(`[EntitySearchSystem] 矩形搜索找到 ${inRangeEntities.length} 個實體`);
         const filteredEntities = this.applyFilter(inRangeEntities, filter);
         return this.selectResults(filteredEntities, position, selector);
+    }
+
+    /**
+     * 檢查實體邊界框是否與矩形相交
+     * 這個方法實現了與圓形搜索一致的邊界框檢測邏輯，但使用矩形幾何
+     */
+    private isEntityBoundsIntersectRectangle(
+        entityPos: Position,
+        entityHalfWidth: number,
+        entityHalfHeight: number,
+        rectCenter: Position,
+        rectHalfWidth: number,
+        rectHalfHeight: number,
+        rotation: number
+    ): boolean {
+        if (rotation === 0) {
+            // 無旋轉情況：標準AABB檢測
+            const entityLeft = entityPos.x - entityHalfWidth;
+            const entityRight = entityPos.x + entityHalfWidth;
+            const entityTop = entityPos.y - entityHalfHeight;
+            const entityBottom = entityPos.y + entityHalfHeight;
+            
+            const rectLeft = rectCenter.x - rectHalfWidth;
+            const rectRight = rectCenter.x + rectHalfWidth;
+            const rectTop = rectCenter.y - rectHalfHeight;
+            const rectBottom = rectCenter.y + rectHalfHeight;
+            
+            // 檢查兩個矩形是否相交
+            return !(entityLeft > rectRight || 
+                    entityRight < rectLeft || 
+                    entityTop > rectBottom || 
+                    entityBottom < rectTop);
+        } else {
+            // 有旋轉情況：使用分離軸定理(SAT)檢測
+            return this.checkRotatedRectangleIntersection(
+                entityPos, entityHalfWidth, entityHalfHeight,
+                rectCenter, rectHalfWidth, rectHalfHeight, rotation
+            );
+        }
+    }
+
+    /**
+     * 使用分離軸定理檢測旋轉矩形與實體邊界框的相交
+     * 這確保了與圓形搜索相同的精確度和一致性
+     */
+    private checkRotatedRectangleIntersection(
+        entityPos: Position,
+        entityHalfWidth: number,
+        entityHalfHeight: number,
+        rectCenter: Position,
+        rectHalfWidth: number,
+        rectHalfHeight: number,
+        rotation: number
+    ): boolean {
+        // 將實體邊界框的中心點轉換到旋轉矩形的局部座標系
+        const dx = entityPos.x - rectCenter.x;
+        const dy = entityPos.y - rectCenter.y;
+        
+        const cosA = Math.cos(-rotation);
+        const sinA = Math.sin(-rotation);
+        const rotatedCenterX = dx * cosA - dy * sinA;
+        const rotatedCenterY = dx * sinA + dy * cosA;
+        
+        // 在旋轉矩形的局部座標系中進行AABB檢測
+        // 這等同於檢查實體邊界框與旋轉後的矩形是否相交
+        const distX = Math.abs(rotatedCenterX);
+        const distY = Math.abs(rotatedCenterY);
+        
+        // 檢查是否相交：距離小於兩個矩形半寬/半高的和
+        return (distX <= (rectHalfWidth + entityHalfWidth)) && 
+               (distY <= (rectHalfHeight + entityHalfHeight));
     }
 
     /**
@@ -302,35 +393,7 @@ export class EntitySearchSystem {
         return this.selectResults(filteredEntities, position, selector);
     }
 
-    /**
-     * 在線形範圍內搜索實體
-     * @param startPos 線段起點
-     * @param endPos 線段終點
-     * @param thickness 線的厚度 (從中心線到邊緣的距離)
-     * @param filter 過濾條件
-     * @param selector 結果選擇器
-     * @returns 符合條件的實體列表
-     */
-    public searchInLine(
-        startPos: Position,
-        endPos: Position,
-        thickness: number,
-        filter?: EntitySearchFilter,
-        selector?: EntityResultSelector
-    ): any[] {
-        const allEntities = this.getAllEntities();
-        const inRangeEntities = allEntities.filter(entity => {
-            const entityPos = this.getEntityPosition(entity);
-            if (!entityPos) return false;
-
-            const distance = this.pointToLineSegmentDistance(entityPos, startPos, endPos);
-            return distance <= thickness;
-        });
-
-        const filteredEntities = this.applyFilter(inRangeEntities, filter);
-        // 對於線形搜索，通常使用起點作為排序參考點
-        return this.selectResults(filteredEntities, startPos, selector);
-    }
+    
 
     /**
      * 全局搜索實體
@@ -386,14 +449,6 @@ export class EntitySearchSystem {
                     params.radius,
                     params.startAngle,
                     params.endAngle,
-                    filter,
-                    selector
-                );
-            case SearchAreaShape.LINE:
-                return this.searchInLine(
-                    params.startPos,
-                    params.endPos,
-                    params.width, // Assuming params.width is thickness for line
                     filter,
                     selector
                 );
@@ -563,10 +618,30 @@ export class EntitySearchSystem {
     private applyFilter(entities: any[], filter?: EntitySearchFilter): any[] {
         if (!filter) return entities;
 
+        console.log('[DEBUG] applyFilter - 輸入實體數量:', entities.length);
+        console.log('[DEBUG] applyFilter - 過濾條件:', filter);
+
         return entities.filter(entity => {
-            if (filter.entityTypes && !filter.entityTypes.some(type => this.isEntityType(entity, type))) {
+            console.log('[DEBUG] 檢查實體:', {
+                entityId: entity.entityId || entity.name || entity.id || 'unknown',
+                hasGetData: typeof entity.getData === 'function',
+                type: entity.type,
+                isMonster: entity.isMonster,
+                constructorName: entity.constructor?.name
+            });
+
+            if (filter.entityTypes && !filter.entityTypes.some(type => {
+                const isType = this.isEntityType(entity, type);
+                console.log(`[DEBUG] 檢查實體類型 ${type}:`, {
+                    entityId: this.getEntityId(entity),
+                    result: isType
+                });
+                return isType;
+            })) {
+                console.log('[DEBUG] 實體類型不符合，被過濾:', this.getEntityId(entity));
                 return false;
             }
+            
             if (filter.excludeIds && filter.excludeIds.includes(this.getEntityId(entity))) {
                 return false;
             }
@@ -592,8 +667,11 @@ export class EntitySearchSystem {
                 return false;
             }
             if (filter.custom && !filter.custom(entity)) {
+                console.log('[DEBUG] 自定義過濾器不通過:', this.getEntityId(entity));
                 return false;
             }
+            
+            console.log('[DEBUG] 實體通過所有過濾條件:', this.getEntityId(entity));
             return true;
         });
     }
@@ -695,9 +773,7 @@ export class EntitySearchSystem {
         const dx = pos1.x - pos2.x;
         const dy = pos1.y - pos2.y;
         return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    /**
+    }    /**
      * 計算點到線段的最短距離
      * @param p 點
      * @param a 線段端點A
@@ -705,6 +781,15 @@ export class EntitySearchSystem {
      * @returns 點到線段的最短距離
      */
     private pointToLineSegmentDistance(p: Position, a: Position, b: Position): number {
+        // 檢查所有位置參數的有效性
+        if (!p || !a || !b || 
+            typeof p.x !== 'number' || typeof p.y !== 'number' ||
+            typeof a.x !== 'number' || typeof a.y !== 'number' ||
+            typeof b.x !== 'number' || typeof b.y !== 'number') {
+            console.warn('[EntitySearchSystem] pointToLineSegmentDistance: 無效的位置參數', { p, a, b });
+            return Infinity;
+        }
+
         const l2 = this.getDistance(a, b) ** 2;
         if (l2 === 0) return this.getDistance(p, a); // a 和 b 是同一個點
 
@@ -754,33 +839,39 @@ export class EntitySearchSystem {
      */
     private isEntityType(entity: any, type: EntityType): boolean {
         if (!entity) return false;
-        if (type === EntityType.ANY) return true;
+        if (type === EntityType.ANY) return true;        console.log('[DEBUG] isEntityType 檢查:', {
+            entityId: this.getEntityId(entity),
+            targetType: type,
+            entityType: entity.type,
+            rawEntityId: entity.id,
+            entityName: entity.name,
+            hasGetData: typeof entity.getData === 'function',
+            isMonster: entity.isMonster,
+            category: entity.category,
+            constructorName: entity.constructor?.name
+        });
 
         // 檢查實體本身和它的 gameObject 屬性 (常見於組件模式)
         const targetsToCheck = [entity, entity.gameObject].filter(e => e != null);
 
         for (const target of targetsToCheck) {
-            // More robust checks:
-            // 1. Direct 'type' property matching Enum value
-            // 2. Direct 'type' property matching string literal (e.g. 'monster')
-            // 3. getData('isMonster'), getData('monsterInstance') etc.
-            // 4. Boolean flags like target.isMonster
-            // 5. Instanceof checks if you have actual classes (e.g. target instanceof MonsterClass)
+            console.log('[DEBUG] 檢查目標:', {
+                targetType: type,
+                target: {
+                    type: target.type,
+                    id: target.id,
+                    name: target.name,
+                    isMonster: target.isMonster,
+                    category: target.category,
+                    hasGetData: typeof target.getData === 'function',
+                    getData_isMonster: target.getData ? target.getData('isMonster') : undefined,
+                    getData_monsterInstance: target.getData ? target.getData('monsterInstance') : undefined
+                }
+            });
 
             switch (type) {
                 case EntityType.MONSTER:
-                    // console.log('[EntitySearchSystem] 檢查怪物類型:', {
-                    //     type: target.type,
-                    //     id: target.id,
-                    //     name: target.name,
-                    //     constructorName: target.constructor ? target.constructor.name : undefined,
-                    //     hasGetData: typeof target.getData === 'function',
-                    //     isMonsterData: target.getData ? target.getData('isMonster') : undefined,
-                    //     monsterInstanceData: target.getData ? target.getData('monsterInstance') : undefined,
-                    //     isMonsterProp: target.isMonster,
-                    //     category: target.category
-                    // });
-                    if (
+                    const isMonster = (
                         target.type === EntityType.MONSTER ||
                         target.type === 'monster' ||
                         (target.id && typeof target.id === 'string' && (
@@ -808,11 +899,45 @@ export class EntitySearchSystem {
                         ))
                         // Add instanceof check if you have a Monster class:
                         // || target instanceof YourGameMonsterClass
-                    ) {
-                        // console.log(`[EntitySearchSystem] 確認為怪物: ${this.getEntityId(target)}`);
+                    );
+                    
+                    console.log('[DEBUG] 怪物類型檢查結果:', {
+                        entityId: this.getEntityId(target),
+                        isMonster: isMonster,
+                        checks: {
+                            typeEnum: target.type === EntityType.MONSTER,
+                            typeString: target.type === 'monster',
+                            idIncludes: target.id && typeof target.id === 'string' && (
+                                target.id.includes('monster') ||
+                                target.id.includes('guardian') ||
+                                target.id.includes('boss') ||
+                                target.id.includes('enemy')
+                            ),
+                            nameIncludes: target.name && typeof target.name === 'string' && (
+                                target.name.toLowerCase().includes('monster') ||
+                                target.name.toLowerCase().includes('guardian') ||
+                                target.name.toLowerCase().includes('boss') ||
+                                target.name.toLowerCase().includes('enemy')
+                            ),
+                            getDataIsMonster: target.getData ? target.getData('isMonster') === true : false,
+                            getDataMonsterInstance: target.getData ? target.getData('monsterInstance') != null : false,
+                            isMonsterProp: target.isMonster === true,
+                            monsterInstanceProp: target.monsterInstance != null,
+                            categoryCheck: target.category && (
+                                target.category === 'monster' ||
+                                target.category === 'elite' ||
+                                target.category === 'boss'
+                            )
+                        }
+                    });
+                    
+                    if (isMonster) {
+                        console.log(`[DEBUG] 確認為怪物: ${this.getEntityId(target)}`);
                         return true;
                     }
                     break;
+                    
+                // ...existing cases for PLAYER, NPC, PROJECTILE...
                 case EntityType.PLAYER:
                     if (
                         target.type === EntityType.PLAYER ||
@@ -842,8 +967,8 @@ export class EntitySearchSystem {
                     break;
             }
         }
-        // const entityId = this.getEntityId(entity);
-        // console.log(`[EntitySearchSystem] 實體 ${entityId} 不符合類型 ${type}`);
+        
+        console.log(`[DEBUG] 實體 ${this.getEntityId(entity)} 不符合類型 ${type}`);
         return false;
     }
 

@@ -57,13 +57,13 @@ export enum SkillEventType {
     DAMAGE_RECEIVED = 'damage_received',  // 受到傷害
     SKILL_HIT_ENEMY = 'skill_hit_enemy',  // 技能命中敵人
     CRITICAL_HIT = 'critical_hit',        // 暴擊事件
-    
-    // 特殊條件事件
+      // 特殊條件事件
     PLAYER_ATTACK = 'player_attack',      // 玩家攻擊
     PLAYER_KILL = 'player_kill',          // 玩家擊殺敵人
     PLAYER_DODGE = 'player_dodge',        // 玩家閃避
     PLAYER_BLOCK = 'player_block',        // 玩家格擋
-    PLAYER_STATUS_CHANGE = 'player_status_change'  // 玩家狀態變化
+    PLAYER_STATUS_CHANGE = 'player_status_change',  // 玩家狀態變化
+    PLAYER_DASH = 'player_dash'           // 玩家衝刺位移
 }
 
 /**
@@ -146,7 +146,7 @@ export enum WeaponRestrictionType {
 export enum SkillDamageType {
     PHYSICAL = 'physical', // 物理傷害
     MAGICAL = 'magical',   // 魔法傷害
-    HYBRID = 'hybrid'      // 混合傷害
+    MIXED = 'mixed'      // 混合傷害
 }
 
 /**
@@ -157,6 +157,7 @@ export enum SkillProjectileCategory {
     SLASH = 'slash',            // 斬擊 (近戰揮砍)
     THRUST = 'thrust',          // 刺擊 (向前刺擊)
     AREA = 'area',              // 範圍效果 (爆炸、光環)
+    DASH = 'dash',              // 衝刺效果 (瞬擊等位移技能)
     BUFF = 'buff',              // 增益效果
     DEBUFF = 'debuff'           // 減益效果
 }

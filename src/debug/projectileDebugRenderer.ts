@@ -1,24 +1,19 @@
 import { Scene } from 'phaser';
 import { SkillProjectile } from '../core/skills/skillProjectile';
 import type { EntitySearchFilter } from '../core/combat/entitySearchSystem';
-import { CollisionBoxType } from '../core/skills/types';
-import { Collider, CircleCollider, RectangleCollider } from '../core/skills/projectile/projectileCollider';
 
 /**
  * 投射物除錯渲染器 - 用於視覺化投射物碰撞框和搜索範圍
  */
 export class ProjectileDebugRenderer {
-    private scene: Scene;
     private graphics: Phaser.GameObjects.Graphics;
     
     // 臨時文字元素的存儲陣列，用於每次渲染後清理
-    private temporaryTexts: Phaser.GameObjects.Text[] = [];
-      // 渲染選項
+    private temporaryTexts: Phaser.GameObjects.Text[] = [];      // 渲染選項
     private showProjectileHitboxes: boolean = true;   // 顯示投射物碰撞框（默認啟用）
     private showSearchRanges: boolean = true;         // 顯示搜索範圍（默認啟用）
     
     // 顏色與透明度設置
-    private hitboxColor: number = 0x00FFFF;        // 青色
     private searchRangeColor: number = 0xFFFF00;    // 黃色
     private boxOpacity: number = 0.3;              // 30% 不透明度
     private outlineOpacity: number = 0.7;          // 70% 不透明度
@@ -26,7 +21,6 @@ export class ProjectileDebugRenderer {
     private arrowColor: number = 0xFF00FF;         // 紫色，用於方向指示
     
     constructor(scene: Scene) {
-        this.scene = scene;
         this.graphics = scene.add.graphics();
         
         // 設置圖形的深度，確保在大多數遊戲元素之上，但在UI之下
@@ -95,10 +89,7 @@ export class ProjectileDebugRenderer {
             const x = sprite.x;
             const y = sprite.y;
             
-            // 渲染投射物碰撞框
-            if (this.showProjectileHitboxes) {
-                this.renderProjectileHitbox(projectile, x, y);
-            }
+
             
             // 渲染搜索範圍
             if (this.showSearchRanges) {
@@ -111,36 +102,6 @@ export class ProjectileDebugRenderer {
             }
         }
     }
-    
-    /**
-     * 渲染投射物碰撞框，此處已不需要，因為投射物的碰撞框已在精靈上繪製
-     */
-    private renderProjectileHitbox(projectile: SkillProjectile, x: number, y: number): void {
-        // const collider = projectile.getCollider();
-        
-        // if (!collider) return;
-        
-        // if (collider.getType() === CollisionBoxType.CIRCLE) {
-        //     const circleCollider = collider as CircleCollider;
-        //     const radius = circleCollider.getRadius();
-            
-        //     // 繪製圓形碰撞框
-        //     this.drawCircle(x, y, radius, this.hitboxColor);
-        // } else if (collider.getType() === CollisionBoxType.RECTANGLE) {
-        //     const rectCollider = collider as RectangleCollider;
-        //     const rect = rectCollider.getRectangle();
-            
-        //     // 繪製矩形碰撞框
-        //     this.drawBox(
-        //         x, 
-        //         y, 
-        //         rect.width, 
-        //         rect.height, 
-        //         this.hitboxColor,
-        //         rectCollider.getAngle()
-        //     );
-        // }
-    }
       /**
      * 渲染搜索範圍
      */
@@ -151,8 +112,7 @@ export class ProjectileDebugRenderer {
         }
 
         const searchArea = searchFilter.area;
-        
-        // 根據搜索區域類型繪製
+          // 根據搜索區域類型繪製
         switch (searchArea.type) {
             case 'circle':
                 const circleArea = searchArea as any; 
@@ -163,13 +123,12 @@ export class ProjectileDebugRenderer {
                 } else {
                     console.warn(`[DebugRenderer] Circle search area for projectile ${projectile.getId()} is missing radius.`);
                 }
-                break;
-            case 'rectangle':
+                break;            case 'rectangle':
                 const rectArea = searchArea as any; 
                 if (typeof rectArea.width === 'number' && typeof rectArea.height === 'number') {
-                    // 斬擊技能的 direction 是 Phaser 角度
-                    // drawBox 的 angle 參數也是 Phaser 角度
-                    const angle = rectArea.angle !== undefined ? rectArea.angle : projectile.getAttribute('direction') as number || 0;
+                    // 獲取角度 - 統一使用度數
+                    let angle = rectArea.angle !== undefined ? rectArea.angle : projectile.getAttribute('direction') as number || 0;
+                    
                     this.drawBox(
                         x, 
                         y, 
@@ -181,6 +140,26 @@ export class ProjectileDebugRenderer {
                     );
                 } else {
                     console.warn(`[DebugRenderer] Rectangle search area for projectile ${projectile.getId()} is missing width or height.`);
+                }
+                break;
+            case 'line':
+                const lineArea = searchArea as any;
+                if (typeof lineArea.length === 'number') {
+                    // 線形搜尋範圍的渲染
+                    const lineWidth =  lineArea.width !== undefined ? lineArea.width : 0.05; // 預設線寬為 5
+                    const lineAngle = lineArea.angle !== undefined ? lineArea.angle : projectile.getAttribute('direction') as number || 0;
+                    
+                    this.drawLine(
+                        x,
+                        y,
+                        lineArea.length,
+                        lineWidth,
+                        lineAngle,
+                        this.searchRangeColor,
+                        this.searchRangeOpacity
+                    );
+                } else {
+                    console.warn(`[DebugRenderer] Line search area for projectile ${projectile.getId()} is missing length.`);
                 }
                 break;
             case 'sector':
@@ -295,8 +274,7 @@ export class ProjectileDebugRenderer {
         this.graphics.closePath();
         this.graphics.fillPath();
     }
-    
-    /**
+      /**
      * 繪製一個圓形
      */
     private drawCircle(
@@ -313,6 +291,37 @@ export class ProjectileDebugRenderer {
         // 繪製圓形邊框
         this.graphics.lineStyle(2, color, this.outlineOpacity);
         this.graphics.strokeCircle(x, y, radius);
+    }
+    
+    /**
+     * 繪製線形搜尋範圍
+     */
+    private drawLine(
+        x: number,
+        y: number,
+        length: number,
+        width: number,
+        angle: number,
+        color: number,
+        fillOpacity: number = this.searchRangeOpacity
+    ): void {
+        // 保存當前變換
+        this.graphics.save();
+        
+        // 移動到起點並旋轉
+        this.graphics.translateCanvas(x, y);
+        this.graphics.rotateCanvas(Phaser.Math.DegToRad(angle));
+        
+        // 繪製線條作為矩形（從起點向前延伸）
+        this.graphics.fillStyle(color, fillOpacity);
+        this.graphics.fillRect(0, -width / 2, length, width);
+        
+        // 繪製邊框
+        this.graphics.lineStyle(2, color, this.outlineOpacity);
+        this.graphics.strokeRect(0, -width / 2, length, width);
+        
+        // 恢復變換
+        this.graphics.restore();
     }
     
     /**

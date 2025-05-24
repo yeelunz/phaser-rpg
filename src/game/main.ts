@@ -23,7 +23,7 @@ const config: Phaser.Types.Core.GameConfig = {
         default: 'arcade',
         arcade: {
             gravity: { x: 0, y: 0 }, // 對於俯角RPG，我們不需要任何重力
-            debug: false
+            // debug: true // 設置為 true 以便在開發時查看物理邊界
         }
     },
     dom: {

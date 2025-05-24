@@ -374,3 +374,4 @@ export class ArcMovementBehavior implements ProjectileMovementBehavior {
         return this.progress;
     }
 }
+

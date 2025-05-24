@@ -1,12 +1,9 @@
 import { Stats } from "../core/stats";
 import { InventoryManager } from "../core/items/inventory_manager";
 import { EquipmentManager } from "../core/items/equipmentManager";
-import {
-  SkillManager,
-  // PhaserSkillRenderer, // 已廢棄
-  SkillLoader,
-  WeaponRestrictionType,
-} from "../core/skills";
+import { SkillManager } from "../core/skills";
+import { SkillEventManager } from "../core/skills/skillEventManager";
+import { SkillEventType, SkillEvent } from "../core/skills/types";
 
 // 方向常數
 export const Direction = {
@@ -44,15 +41,35 @@ class Player {
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     // 創建玩家精靈
-    this.sprite = scene.physics.add.sprite(x, y, "player");
-
-    // 設置物理屬性
+    this.sprite = scene.physics.add.sprite(x, y, "player");    // 設置物理屬性 (更新為 Phaser 3.90.0 語法)
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setDisplaySize(32, 32);
 
+    // 明確設置物理屬性
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-    body.setSize(this.size, this.size); // 使用 this.size (例如 32) 設定物理實體大小
-    // body.setOffset(0, 0); // 如果精靈圖檔有空白邊緣，可能需要調整偏移
+    if (body) {
+        // 確保碰撞體積比視覺大小稍大以提高碰撞成功率
+        body.setSize(this.size, this.size); // 使用 this.size (例如 32) 設定物理實體大小
+        body.setOffset(0, 0); // 重置偏移
+        body.setBounce(0); // 不反彈
+        body.setDrag(0, 0); // 沒有阻力
+        body.setMaxVelocity(1000, 1000); // 最大速度限制
+        body.setImmovable(false); // 設置為可移動體 (動態物體)
+        
+        // 啟用物理碰撞
+        body.checkCollision.none = false;
+        body.checkCollision.up = true;
+        body.checkCollision.down = true;
+        body.checkCollision.left = true;
+        body.checkCollision.right = true;
+        
+        // 設置更高的碰撞優先級，確保與靜態物體碰撞時玩家會受到推擠
+        body.pushable = true; // 明確設置可被推動
+        body.useDamping = false; // 不使用阻尼
+        body.allowDrag = false; // 不允許拖拽
+        
+        console.log(`[Player.ts] Player physics configured. Body size: ${body.width}x${body.height}`);
+    }
     console.log(
       `[Player.ts] Player sprite created. Body enabled: ${body.enable}, Body size: ${body.width}x${body.height}, Pos: (${this.sprite.x}, ${this.sprite.y})`
     ); // 獲取鍵盤控制
@@ -94,10 +111,9 @@ class Player {
     });
     console.log("[Player.ts] SkillManager 已創建，異步初始化已開始");
   }
-
   /**
    * 初始化技能管理器
-   */  private async initializeSkillManager(_scene: Phaser.Scene): Promise<void> {
+   */  private async initializeSkillManager(scene: Phaser.Scene): Promise<void> {
     // skillManager 現在總是存在，只需要初始化它
     const initialized = await this.skillManager.initialize();
     if (initialized) {
@@ -107,6 +123,59 @@ class Player {
     } else {
       console.error("[Player.ts] 技能管理器初始化失敗");
     }
+    
+    // 註冊衝刺事件監聽器
+    this.setupDashEventListener(scene);
+  }
+
+  /**
+   * 設置衝刺事件監聽器
+   */
+  private setupDashEventListener(scene: Phaser.Scene): void {
+    const eventManager = SkillEventManager.getInstance();
+    eventManager.addEventListener(SkillEventType.PLAYER_DASH, (event: SkillEvent) => {
+      // 確保事件是針對這個玩家的
+      if (event.casterId !== this.id) {
+        return;
+      }
+      
+      const dashData = event.data;
+      if (!dashData || !dashData.startPosition || !dashData.endPosition) {
+        console.warn('[Player.ts] 衝刺事件數據不完整');
+        return;
+      }
+      
+      const { startPosition, endPosition, duration, easing = 'Power2.easeOut' } = dashData;
+      
+      console.log(`[Player.ts] 收到衝刺事件 - 從 (${startPosition.x}, ${startPosition.y}) 到 (${endPosition.x}, ${endPosition.y}), 持續時間: ${duration}ms`);
+      
+      // 使用 Phaser 的 Tween 系統創建平滑的衝刺動畫
+      if (scene.tweens && this.sprite) {
+        scene.tweens.add({
+          targets: this.sprite,
+          x: endPosition.x,
+          y: endPosition.y,
+          duration: duration,
+          ease: easing,
+          onComplete: () => {
+            console.log(`[Player.ts] 衝刺動畫完成，玩家到達: (${endPosition.x}, ${endPosition.y})`);
+            
+            // 確保玩家的物理體位置也得到更新
+            if (this.sprite.body) {
+              this.sprite.body.x = endPosition.x - this.sprite.body.halfWidth;
+              this.sprite.body.y = endPosition.y - this.sprite.body.halfHeight;
+            }
+          },
+          onCompleteScope: this
+        });
+      } else {
+        // 如果無法使用 Tween，回退到立即移動
+        console.warn('[Player.ts] 無法找到場景的 tweens 系統，使用立即移動');
+        this.sprite.setPosition(endPosition.x, endPosition.y);
+      }
+    });
+    
+    console.log('[Player.ts] 衝刺事件監聽器已註冊');
   }/**
    * 獲取玩家的唯一識別碼
    * 用於戰鬥系統和實體管理器識別

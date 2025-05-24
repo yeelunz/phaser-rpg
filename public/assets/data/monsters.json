@@ -1,6 +1,6 @@
 [
     {
-        "id": "goblin_scout_001",
+        "id": "goblin_wanderer_001",
         "name": "哥布林斥候",
         "baseStats": {
             "level": 2,
@@ -18,27 +18,24 @@
             "magicDamageBonus": 0,
             "physicalDamageBonus": 2,
             "defenseIgnore": 0,
-            "moveSpeed": 110,
+            "moveSpeed": 25,
             "critRate": 0,
             "damageStability": 290,
             "vulnerability": 0,
             "resistance": 0,
             "energyRecovery": 90
-        },
-        "category": "monster",
-        "movementPattern": "patrol_and_chase",
-        "attackPattern": null,
-        "complexBehaviorId": null,
+        },        "category": "monster",
+        "behaviorId": "goblin_wanderer",
         "experienceYield": 15,
         "isSolid": true,
          "sprite":null,
         "collisionBox": {
-            "width": 28,
-            "height": 45
+            "width": 50,
+            "height": 50
         },
         "hitBox": {
-            "width": 50,
-            "height": 40
+            "width": 55,
+            "height": 55
         },
         "icon": "👺",
         "drops": [
@@ -72,11 +69,8 @@
             "vulnerability": 0,
             "resistance": 0,
             "energyRecovery": 0
-        },
-        "category": "monster",
-        "movementPattern": "aggressive_chase",
-        "attackPattern": null,
-        "complexBehaviorId": null,
+        },        "category": "monster",
+        "behaviorId": "dire_wolf",
         "experienceYield": 35,
         "isSolid": true,
         "sprite":null,
@@ -118,13 +112,10 @@
             "critRate": 0.5,
             "damageStability": 320,
             "vulnerability": 0,
-            "resistance": 10,
+            "resistance": 0.9,
             "energyRecovery": 50
-        },
-        "category": "elite",
-        "movementPattern": "stationary",
-        "attackPattern": "melee",
-        "complexBehaviorId": null,
+        },        "category": "elite",
+        "behaviorId": "stone_guardian",
         "experienceYield": 50,
         "isSolid": true,
         "sprite": null,

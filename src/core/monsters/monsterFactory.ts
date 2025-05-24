@@ -1,6 +1,10 @@
-// 怪物工廠 - 負責創建怪物實例
+/**
+ * 怪物工廠 v4 - 僅使用新的狀態機行為系統
+ * 完全捨棄舊行為系統
+ */
 import { Monster } from './monster';
 import { type MonsterData, dataLoader, MonsterCategory } from '../data/dataloader';
+import { BehaviorLoader } from './behaviors/definitions/behaviorLoader';
 
 // 怪物工廠類別 - 單例模式
 export class MonsterFactory {
@@ -30,13 +34,48 @@ export class MonsterFactory {
         }
 
         return this.createMonster(monsterData);
-    }
-
-    // 根據怪物數據創建怪物實例
+    }    // 根據怪物數據創建怪物實例
     public createMonster(data: MonsterData): Monster {
-        return new Monster(data);
+        // 已經從 monsters.json 指定了 behaviorId，則直接使用
+        // 如果沒有指定，才嘗試自動分配
+        if (!data.behaviorId) {
+            console.debug(`[MonsterFactory] 怪物 ${data.id} 沒有指定行為ID，嘗試自動分配`);
+            data.behaviorId = this.autoAssignBehaviorId(data);
+            
+            // 確保所有怪物都有行為ID
+            if (!data.behaviorId) {
+                // 如果無法分配特定行為，使用基本行為
+                console.debug(`[MonsterFactory] 無法為怪物 ${data.id} 分配合適的行為，使用基本行為`);
+                data.behaviorId = 'basic_enemy';
+            }
+        } else {
+            console.debug(`[MonsterFactory] 使用怪物 ${data.id} 指定的行為ID: ${data.behaviorId}`);
+        }
+        
+        const monster = new Monster(data);
+        return monster;
+    }      // 嘗試根據怪物類型自動分配行為ID    
+    private autoAssignBehaviorId(data: MonsterData): string {
+        // 基於怪物類型進行推斷
+        if (data.category === MonsterCategory.BOSS) {
+            console.debug(`[MonsterFactory] 基於類別分配 BOSS 行為給 ${data.id}`);
+            return 'elite_enemy'; // 使用精英行為定義
+        } else if (data.category === MonsterCategory.ELITE) {
+            console.debug(`[MonsterFactory] 基於類別分配精英行為給 ${data.id}`);
+            return 'elite_enemy';
+        }
+        
+        // 默認使用基本行為定義
+        console.debug(`[MonsterFactory] 為 ${data.id} 分配默認行為: basic_enemy`);
+        return 'basic_enemy';
     }
-
+    
+    // 註冊自定義怪物行為
+    public registerCustomBehavior(behaviorConfig: any): void {
+        // 使用 BehaviorLoader 註冊新的行為配置
+        BehaviorLoader.registerBehavior(behaviorConfig);
+    }
+    
     // 批量創建怪物
     public createMonsters(monsterIds: string[]): Monster[] {
         const monsters: Monster[] = [];
@@ -98,6 +137,7 @@ export class MonsterFactory {
         monsterCollisionBoxes: Map<string, Phaser.Physics.Arcade.Sprite>,
         monsterHitboxes: Map<string, Phaser.Physics.Arcade.Sprite>
     ): void {
+        // 這部分代碼保持不變，因為它處理的是實體渲染而非行為邏輯
         let monsterSprite: Phaser.GameObjects.Sprite;
         let monsterText: Phaser.GameObjects.Text | null = null;
         if (!monster.getSprite()) {
@@ -137,6 +177,7 @@ export class MonsterFactory {
         }
         monsterSprite.setOrigin(0.5, 0.5);
         monsterSprite.setDepth(5);
+        
         const body = monsterSprite.body as Phaser.Physics.Arcade.Body;
         body.setSize(
             monster.getCollisionBox().width * 0.6,
@@ -148,6 +189,7 @@ export class MonsterFactory {
         body.checkCollision.left = true;
         body.checkCollision.right = true;
         scene.physics.add.collider(player.sprite, monsterSprite);
+
         const collisionBoxSprite = scene.physics.add.sprite(
             monster.getPosition().x,
             monster.getPosition().y,
@@ -165,8 +207,7 @@ export class MonsterFactory {
         collisionBoxBody.checkCollision.up = true;
         collisionBoxBody.checkCollision.down = true;
         collisionBoxBody.checkCollision.left = true;
-        collisionBoxBody.checkCollision.right = true;
-        const hitboxSprite = scene.physics.add.sprite(
+        collisionBoxBody.checkCollision.right = true;        const hitboxSprite = scene.physics.add.sprite(
             monster.getPosition().x,
             monster.getPosition().y,
             'transparent'
@@ -182,17 +223,58 @@ export class MonsterFactory {
         hitboxBody.allowGravity = false;
         hitboxBody.checkCollision.up = true;
         hitboxBody.checkCollision.down = true;
-        hitboxBody.checkCollision.left = true;
-        hitboxBody.checkCollision.right = true;
-        scene.events.on(Phaser.Scenes.Events.UPDATE, () => {
+        hitboxBody.checkCollision.left = true;        hitboxBody.checkCollision.right = true;
+
+        // 創建偵測圓圈（用於 Phaser debug graphic 顯示）
+        // 使用怪物實際的偵測範圍，確保與邏輯偵測保持一致
+        const detectionRange = (monster as any).detectionRange;
+        let detectionCircleSprite: Phaser.Physics.Arcade.Sprite | null = null;
+        
+        // 只有當偵測範圍大於 0 時才創建偵測圓圈
+        if (detectionRange && detectionRange > 0) {
+            detectionCircleSprite = scene.physics.add.sprite(
+                monster.getPosition().x,
+                monster.getPosition().y,
+                'transparent'
+            );
+            detectionCircleSprite.setOrigin(0.5, 0.5);
+            detectionCircleSprite.setVisible(false);
+            const detectionBody = detectionCircleSprite.body as Phaser.Physics.Arcade.Body;
+            
+            // 設置為圓形碰撞體，用於偵測
+            // 使用 setCircle(radius, offsetX, offsetY) 來修正圓心位置
+            detectionBody.setCircle(detectionRange, -detectionRange, -detectionRange);
+            detectionBody.setImmovable(true);
+            detectionBody.allowGravity = false;
+            // 設置為 overlap 檢測（不產生物理碰撞）
+            detectionBody.checkCollision.none = true;
+            
+            // 設置偵測圓圈與玩家的 overlap 檢測
+            scene.physics.add.overlap(player.sprite, detectionCircleSprite, () => {
+                // 這裡可以觸發怪物發現玩家的事件
+                console.log(`怪物 ${monster.getName()} 偵測到玩家`);
+            });
+            
+            console.debug(`[MonsterFactory] 為怪物 ${monster.getName()} 創建偵測圓圈，範圍: ${detectionRange}`);
+        } else {
+            console.debug(`[MonsterFactory] 怪物 ${monster.getName()} 偵測範圍為 ${detectionRange}，跳過偵測圓圈創建`);
+        }        scene.events.on(Phaser.Scenes.Events.UPDATE, () => {
             if (collisionBoxSprite && monsterSprite) {
                 collisionBoxSprite.x = monsterSprite.x;
                 collisionBoxSprite.y = monsterSprite.y;
             }
             if (hitboxSprite && monsterSprite) {
                 hitboxSprite.x = monsterSprite.x;
-                hitboxSprite.y = monsterSprite.y;            }
-        });        const instanceId = monster.getInstanceId ? monster.getInstanceId() : monster.getId(); // 向下相容
+                hitboxSprite.y = monsterSprite.y;            
+            }
+            // 只有當偵測圓圈存在時才更新位置
+            if (detectionCircleSprite && monsterSprite) {
+                detectionCircleSprite.x = monsterSprite.x;
+                detectionCircleSprite.y = monsterSprite.y;
+            }
+        });
+        
+        const instanceId = monster.getInstanceId ? monster.getInstanceId() : monster.getId(); // 向下相容
         monsterSprites.set(instanceId, monsterSprite);
         monsterCollisionBoxes.set(instanceId, collisionBoxSprite);
         monsterHitboxes.set(instanceId, hitboxSprite);

@@ -1,6 +1,6 @@
 import { Skill } from './skill';
 import { SkillFactory } from './skillFactory';
-import { SkillType, WeaponRestrictionType, SkillImplementation, SkillEventType, SkillEventListener } from './types';
+import { SkillType, SkillImplementation, SkillEventType, SkillEventListener } from './types';
 import { Stats } from '../stats';
 import { SkillEventManager } from './skillEventManager';
 
@@ -347,41 +347,39 @@ export class SkillManager {
         
         return skill;
     }
-    
-      /**
+    /**
      * 獲取技能的實現
      * @param skillId 技能ID
      * @param level 技能等級
      * @returns Promise 解析為技能實現實例，若找不到則返回undefined
-     */    public async getSkillImplementation(skillId: string, level: number): Promise<SkillImplementation | undefined> {
-        // 首先嘗試載入技能實現
+     */
+    public async getSkillImplementation(skillId: string, level: number): Promise<SkillImplementation | undefined> {
         try {
-            // 使用動態導入載入對應的技能實現模組
-            const implementationPath = `./implementations/${skillId}`;
+            console.log(`嘗試載入技能實現: ${skillId}，等級: ${level}`);
             
-            console.log(`嘗試載入技能實現: ${implementationPath}，等級: ${level}`);
+            // 使用 Vite 的 import.meta.glob 來預加載所有實現文件
+            // 這樣 Vite 在構建時就能識別所有可能的導入路徑
+            const modules = import.meta.glob('./implementations/*.ts') as Record<string, () => Promise<any>>;
+            const modulePath = `./implementations/${skillId}.ts`;
             
-            // 使用動態載入技能實現，根據技能ID載入對應模組
-            try {
-                // 動態導入對應的技能實現模組
-                const module = await import(`./implementations/${skillId}`);
-                
-                // 檢查模組是否提供了工廠方法
-                if (module && typeof module[`${skillId}Factory`]?.createImplementation === 'function') {
-                    console.log(`成功載入技能實現: ${skillId}，等級: ${level}`);
-                    // 直接傳入等級參數，不再需要從implementations數組中查找
-                    return module[`${skillId}Factory`].createImplementation(level, this.gameInstance);
-                } else {
-                    console.warn(`技能 ${skillId} 的模組沒有提供有效的工廠方法`);
-                }
-            } catch (err) {
-                console.error(`動態載入 ${skillId} 技能失敗:`, err);
+            if (!(modulePath in modules)) {
+                console.warn(`找不到技能實現文件: ${modulePath}`);
                 return undefined;
             }
             
-            // 如果沒有找到對應的技能實現
-            console.warn(`找不到技能 ${skillId} 的實現`);
-            return undefined;
+            // 動態載入模組
+            const moduleLoader = modules[modulePath];
+            const module = await moduleLoader();
+            
+            // 檢查模組是否提供了工廠方法
+            const factoryName = `${skillId}Factory`;
+            if (module && typeof module[factoryName]?.createImplementation === 'function') {
+                console.log(`成功載入技能實現: ${skillId}，等級: ${level}`);
+                return module[factoryName].createImplementation(level, this.gameInstance);
+            } else {
+                console.warn(`技能 ${skillId} 的模組沒有提供有效的工廠方法: ${factoryName}`);
+                return undefined;
+            }
         } catch (error) {
             console.error(`載入技能 ${skillId} 的實現失敗:`, error);
             return undefined;
@@ -558,14 +556,16 @@ export class SkillManager {
     /**
      * 清除技能的鍵位綁定
      * @param skillId 技能ID
-     */
-    private clearKeyBinding(skillId: string): void {
+     */    private clearKeyBinding(skillId: string): void {
         try {
-            // 動態引入鍵位綁定管理器
-            const { KeyBindManager } = require('./keyBindManager');
-            const keyBindManager = KeyBindManager.getInstance();
-            keyBindManager.clearSkillBinding(skillId);
-            console.log(`已清除技能 ${skillId} 的鍵位綁定`);
+            // 動態引入鍵位綁定管理器 - 使用 ES6 import 語法
+            import('./keyBindManager').then(({ KeyBindManager }) => {
+                const keyBindManager = KeyBindManager.getInstance();
+                keyBindManager.clearSkillBinding(skillId);
+                console.log(`已清除技能 ${skillId} 的鍵位綁定`);
+            }).catch(error => {
+                console.warn('無法清除鍵位綁定:', error);
+            });
         } catch (error) {
             console.warn('無法清除鍵位綁定:', error);
         }

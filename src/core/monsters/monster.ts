@@ -1,16 +1,23 @@
-// 怪物類別 - 遊戲中的怪物實體
+import { IMonsterEntity } from './IMonsterEntity';
+import { MonsterData, MonsterDrop, MonsterCategory } from '../data/dataloader';
 import { Stats } from '../stats';
-import { type MonsterData, type MonsterDrop, MonsterCategory, MovementPattern, AttackPattern } from '../data/dataloader';
+import { MonsterStateMachine } from './behaviors/MonsterStateMachine';
+import { MonsterStateType } from './behaviors/MonsterStateType';
+import { BehaviorLoader } from './behaviors/definitions/BehaviorLoader';
+import { IMonsterBehavior } from './behaviors/IMonsterBehavior';
 
-export class Monster {
-    private id: string;  // 怪物類型 ID
-    private instanceId: string; // 怪物實例唯一 ID
+/**
+ * 怪物實體類 - 實現 IMonsterEntity 接口
+ * 使用新的狀態機行為系統，支援多種技能和行為配置
+ */
+export class Monster implements IMonsterEntity {
+    // 基本屬性
+    private id: string;
+    private instanceId: string;
     private name: string;
     private stats: Stats;
     private category: MonsterCategory;
-    private movementPattern: MovementPattern | null;
-    private attackPattern: AttackPattern | null;
-    private complexBehaviorId: string | null;
+    private behaviorId: string | null;
     private experienceYield: number;
     private isSolid: boolean;
     private sprite: string | null;
@@ -20,25 +27,35 @@ export class Monster {
     private drops: MonsterDrop[];
     private goldDrop: number;
     
-    // 額外遊戲相關屬性
+    // 遊戲狀態屬性
     private isActive: boolean = false;
     private isAlive: boolean = true;
-    private x: number = 0;
-    private y: number = 0;
-    private direction: number = 0; // 朝向 (角度)
+    private isInvulnerable: boolean = false;
+    
+    // 位置和移動相關
+    public x: number = 0;
+    public y: number = 0;
+    private velocityX: number = 0;
+    private velocityY: number = 0;
+    private rotation: number = 0;
     private speed: number = 0;
-    private currentState: MonsterState = MonsterState.IDLE;
-    private target: any = null; // 目標對象 (通常是玩家)
-    private detectionRange: number = 200; // 偵測範圍
+    private currentState: MonsterStateType = MonsterStateType.WANDERING;
+    private detectionRange: number = 200;
+    
+    // 新行為系統相關屬性
+    private stateMachine: MonsterStateMachine | null = null;
+    private tempData: Map<string, any> = new Map();
+      // 視覺效果相關
+    private scene: any = null;
+    private _alpha: number = 1; // 改名為 _alpha，以避免未使用警告
+    private _scale: number = 1; // 改名為 _scale，以避免未使用警告
 
     constructor(data: MonsterData) {
-        this.id = data.id;  // 保存怪物類型ID
-        this.instanceId = data.id + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000); // 生成唯一實例ID
+        this.id = data.id;
+        this.instanceId = data.id + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
         this.name = data.name;
         this.category = data.category;
-        this.movementPattern = data.movementPattern;
-        this.attackPattern = data.attackPattern;
-        this.complexBehaviorId = data.complexBehaviorId;
+        this.behaviorId = data.behaviorId || null;
         this.experienceYield = data.experienceYield;
         this.isSolid = data.isSolid;
         this.sprite = data.sprite;
@@ -51,7 +68,14 @@ export class Monster {
         // 初始化能力值統計
         this.stats = new Stats();
         this.initializeStats(data);
-    }    // 初始化怪物能力值
+        
+        // 初始化新的狀態機行為系統
+        if (this.behaviorId) {
+            this.initializeStateMachine();
+        }
+    }
+    
+    // 初始化怪物能力值
     private initializeStats(data: MonsterData): void {
         const baseStats = data.baseStats;
         
@@ -77,50 +101,342 @@ export class Monster {
         this.stats.setBaseResistance(baseStats.resistance);
         this.stats.setBaseEnergyRecovery(baseStats.energyRecovery);
         
+        // 設定基本移動速度
+        this.speed = baseStats.moveSpeed;
+        
         // 根據怪物數據初始化偵測範圍
-        this.detectionRange = baseStats.moveSpeed * 2; // 根據移動速度調整偵測範圍
+        this.detectionRange = baseStats.moveSpeed * 2;
         
         // 怪物一開始設定為滿血滿能量
         this.stats.resetHP();
         this.stats.resetEnergy();
-    }    // 取得怪物ID (返回原始的怪物類型ID，保持與舊程式碼的兼容性)
+    }    // 初始化新的狀態機行為系統
+    private initializeStateMachine(): void {
+        if (!this.behaviorId) {
+            console.debug(`[Monster] ${this.id}: 無行為ID，跳過狀態機初始化`);
+            return;
+        }
+
+        console.debug(`[Monster] ${this.id}: 開始初始化狀態機，行為ID: ${this.behaviorId}`);
+
+        try {
+            // 建立狀態機
+            this.stateMachine = new MonsterStateMachine(this);
+            console.debug(`[Monster] ${this.id}: 狀態機已建立`);
+              // 從行為載入器獲取行為設定
+            const behaviorConfig = this.loadBehaviorConfig();
+            
+            if (!behaviorConfig) {
+                console.error(`[Monster] ${this.id}: 找不到怪物行為配置: ${this.behaviorId}`);
+                return;
+            }
+            console.debug(`[Monster] ${this.id}: 行為配置載入成功`);
+            
+            // 更新檢測範圍為行為配置中的值
+            if (behaviorConfig.detectionRange !== undefined) {
+                this.detectionRange = behaviorConfig.detectionRange;
+                console.debug(`[Monster] ${this.id}: 檢測範圍更新為: ${this.detectionRange}`);
+            }
+            
+            // 註冊所有狀態到狀態機
+            this.registerStates(behaviorConfig);
+            console.debug(`[Monster] ${this.id}: 狀態註冊完成`);
+            
+            // 設置初始狀態為遊蕩
+            this.stateMachine.setInitialState(MonsterStateType.WANDERING);
+            console.debug(`[Monster] ${this.id}: 初始狀態設置完成`);
+            
+        } catch (error) {
+            console.error(`[Monster] ${this.id}: 初始化狀態機失敗:`, error);
+        }
+    }    // 註冊狀態到狀態機
+    private registerStates(behaviorConfig: IMonsterBehavior): void {
+        console.debug(`[Monster] ${this.id}: 開始註冊狀態`);
+        
+        // 註冊遊蕩狀態
+        if (behaviorConfig.states[MonsterStateType.WANDERING]) {
+            const wanderingState = BehaviorLoader.createWanderingState(this, this.stateMachine!, behaviorConfig);
+            wanderingState.setSkillPool(behaviorConfig.states[MonsterStateType.WANDERING].skillPool);
+            this.stateMachine!.registerState(wanderingState);
+            console.debug(`[Monster] ${this.id}: 遊蕩狀態已註冊`);
+        }        // 註冊警戒狀態
+        if (behaviorConfig.states[MonsterStateType.ALERT]) {
+            const alertState = BehaviorLoader.createAlertState(this, this.stateMachine!, behaviorConfig);
+            alertState.setSkillPool(behaviorConfig.states[MonsterStateType.ALERT].skillPool);
+            this.stateMachine!.registerState(alertState);
+            console.debug(`[Monster] ${this.id}: 警戒狀態已註冊`);
+        }
+
+        // 註冊追擊狀態
+        if (behaviorConfig.states[MonsterStateType.CHASE]) {
+            const chaseState = BehaviorLoader.createChaseState(this, this.stateMachine!, behaviorConfig);
+            chaseState.setSkillPool(behaviorConfig.states[MonsterStateType.CHASE].skillPool);
+            this.stateMachine!.registerState(chaseState);
+            console.debug(`[Monster] ${this.id}: 追擊狀態已註冊`);
+        }
+        
+        console.debug(`[Monster] ${this.id}: 所有狀態註冊完成`);
+    }// 從行為載入器獲取行為配置
+    private loadBehaviorConfig() {
+        if (!this.behaviorId) {
+            return null;
+        }
+
+        try {
+            return BehaviorLoader.getBehaviorConfig(this.behaviorId);
+        } catch (error) {
+            console.error(`載入行為配置失敗:`, error);
+            return null;
+        }
+    }
+    
+    // ============= IMonsterEntity 接口實現 =============
+    
+    // 基本屬性獲取器
     getId(): string {
         return this.id;
     }
     
-    // 取得怪物的唯一實例ID
     getInstanceId(): string {
         return this.instanceId;
     }
 
-    // 取得怪物名稱
     getName(): string {
         return this.name;
     }
 
-    // 獲取怪物的類型 ID (怪物種類)
-    public getId(): string {
-        return this.id;
-    }
-    
-    // 獲取怪物的實例 ID (唯一識別碼)
-    public getInstanceId(): string {
-        return this.instanceId;
-    }
-    
-    // 根據怪物名稱獲取一個識別碼 (用於調試)
-    public getName(): string {
-        return this.name;
-    }
-
-    // 取得怪物類別
     getCategory(): MonsterCategory {
         return this.category;
     }
 
-    // 取得怪物能力值
     getStats(): Stats {
         return this.stats;
+    }
+    
+    // 位置和移動相關
+    getPosition(): { x: number, y: number } {
+        return { x: this.x, y: this.y };
+    }
+
+    setPosition(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+    }
+    
+    setVelocity(x: number, y: number): void {
+        this.velocityX = x;
+        this.velocityY = y;
+    }
+    
+    getSpeed(): number {
+        return this.speed;
+    }
+    
+    getRotation(): number {
+        return this.rotation;
+    }
+    
+    setRotation(angle: number): void {
+        this.rotation = angle;
+    }
+
+    // 狀態管理
+    isAliveStatus(): boolean {
+        return this.isAlive;
+    }
+    
+    getCurrentState(): MonsterStateType {
+        return this.currentState;
+    }
+    
+    setCurrentState(state: MonsterStateType): void {
+        this.currentState = state;
+    }
+      // 戰鬥相關方法
+    takeDamage(damage: number, damageType: 'physical' | 'magic' | 'true' = 'physical', sourcePosition: { x: number; y: number }): void {
+        if (!this.isAlive || this.isInvulnerable) return;
+
+        // 根據傷害類型應用傷害修正
+        let finalDamage = damage;
+        if (damageType === 'physical') {
+            // 應用物理傷害計算
+            finalDamage = this.calculatePhysicalDamage(damage);
+        } else if (damageType === 'magic') {
+            // 應用魔法傷害計算
+            finalDamage = this.calculateMagicDamage(damage);
+        }
+        // 'true' 類型傷害不受修正
+
+        // 應用傷害到怪物
+        this.stats.takeDamage(finalDamage);
+        
+        // 通知狀態機處理受傷事件
+        if (this.stateMachine) {
+            this.setCurrentState(MonsterStateType.HURT);
+            this.stateMachine.handleDamaged(sourcePosition);
+        } else {
+            this.setCurrentState(MonsterStateType.HURT);
+        }
+
+        // 檢查怪物是否死亡
+        if (this.stats.getCurrentHP() <= 0) {
+            this.die();
+        }
+    }
+    
+    // 計算物理傷害
+    private calculatePhysicalDamage(damage: number): number {
+        const defense = this.stats.getPhysicalDefense();
+        // 簡單的物理傷害計算公式
+        return Math.max(1, damage - defense / 2);
+    }
+    
+    // 計算魔法傷害
+    private calculateMagicDamage(damage: number): number {
+        const defense = this.stats.getMagicDefense();
+        // 簡單的魔法傷害計算公式
+        return Math.max(1, damage - defense / 3);
+    }
+    
+    applyKnockback(velocityX: number, velocityY: number, duration: number): void {
+        this.setVelocity(velocityX, velocityY);
+        // 在實際遊戲中，這裡會設置一個計時器來恢復正常速度
+        setTimeout(() => {
+            this.setVelocity(0, 0);
+        }, duration);
+    }
+    
+    setInvulnerable(invulnerable: boolean): void {
+        this.isInvulnerable = invulnerable;
+    }
+    
+    getHitRadius(): number {
+        return Math.max(this.hitBox.width, this.hitBox.height) / 2;
+    }
+      // 動畫和視覺效果
+    playAnimation(animationKey: string): void {
+        // 在實際遊戲中，這裡會播放對應的動畫
+        console.log(`怪物 ${this.name} 播放動畫: ${animationKey}`);
+    }
+    
+    setAlpha(alpha: number): void {
+        this._alpha = Math.max(0, Math.min(1, alpha));
+        // 在實際實現中會設置精靈的透明度
+    }
+    
+    setScale(scale: number): void {
+        this._scale = Math.max(0.1, scale);
+        // 在實際實現中會設置精靈的縮放
+    }
+    
+    // 場景和遊戲對象
+    getScene(): any {
+        return this.scene;
+    }
+    
+    setScene(scene: any): void {
+        this.scene = scene;
+    }
+    
+    getMonsterType(): string {
+        return this.id;
+    }
+      // 目標檢測 - 使用圓形框檢測替代距離計算
+    canSeePlayer(playerPosition: { x: number; y: number }): boolean {
+        // 使用 Phaser 的圓形幾何檢測，比距離計算更高效
+        const detectionCircle = new Phaser.Geom.Circle(this.x, this.y, this.detectionRange);
+        const playerPoint = new Phaser.Geom.Point(playerPosition.x, playerPosition.y);
+        
+        return Phaser.Geom.Circle.Contains(detectionCircle, playerPoint.x, playerPoint.y);
+    }
+    
+    // 臨時數據存儲
+    setTempData(key: string, value: any): void {
+        this.tempData.set(key, value);
+    }
+    
+    getTempData(key: string): any {
+        return this.tempData.get(key);
+    }
+    
+    removeTempData(key: string): void {
+        this.tempData.delete(key);
+    }
+    
+    // ============= 遊戲邏輯方法 =============
+    
+    // 面向目標
+    faceTarget(targetPosition: { x: number, y: number }): void {
+        const dx = targetPosition.x - this.x;
+        const dy = targetPosition.y - this.y;
+        this.rotation = Math.atan2(dy, dx);
+    }
+    
+    // 執行技能的方法 (由狀態機系統調用)
+    performSkill(skillId: string, targetPosition: { x: number, y: number }): void {
+        console.log(`怪物 ${this.name} 使用技能 ${skillId} 攻擊目標 (${targetPosition.x}, ${targetPosition.y})`);
+        
+        // 在這裡可以調用投射物管理器或效果系統來實際執行技能效果
+    }    // 更新怪物狀態
+    update(delta: number, playerPosition?: { x: number, y: number }): void {
+        if (!this.isAlive || !this.isActive) return;
+
+        // 使用較小的速度更新，讓移動更平滑
+        // 使用時間增量 (delta) 來確保在不同幀率下移動速度一致
+        const timeScale = Math.min(delta / (1000/60), 2.0); // 基於60fps的標準化時間縮放，限制最大值
+        this.x += this.velocityX * timeScale;
+        this.y += this.velocityY * timeScale;
+
+        // 更新能量回復
+        this.stats.regenerateEnergy(delta);
+        
+        if (!playerPosition) return;
+        
+        // 如果使用新的行為系統
+        if (this.stateMachine) {
+            this.stateMachine.update(delta, playerPosition);
+        }
+    }
+
+    // 處理怪物死亡
+    die(): void {
+        this.isAlive = false;
+        this.setCurrentState(MonsterStateType.DEAD);
+        this.setVelocity(0, 0);
+    }
+    
+    // 重置怪物狀態
+    reset(): void {
+        this.isAlive = true;
+        this.isActive = false;
+        this.isInvulnerable = false;
+        this.stats.resetHP();
+        this.stats.resetEnergy();
+        this.setCurrentState(MonsterStateType.WANDERING);
+        this.setVelocity(0, 0);
+        this.tempData.clear();
+        
+        // 重置狀態機
+        if (this.stateMachine) {
+            this.stateMachine.setInitialState(MonsterStateType.WANDERING);
+        }
+    }
+
+    // 激活怪物
+    activate(): void {
+        this.isActive = true;
+    }
+
+    // 停用怪物
+    deactivate(): void {
+        this.isActive = false;
+    }
+
+    // 計算與目標的距離
+    private distanceToTarget(targetPosition: { x: number, y: number }): number {
+        const dx = targetPosition.x - this.x;
+        const dy = targetPosition.y - this.y;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     // 取得怪物經驗值獎勵
@@ -189,277 +505,20 @@ export class Monster {
             items: droppedItems,
             gold: goldAmount
         };
-    }
-
-    // 取得怪物位置
-    getPosition(): { x: number, y: number } {
-        return { x: this.x, y: this.y };
-    }
-
-    // 設定怪物位置
-    setPosition(x: number, y: number): void {
-        this.x = x;
-        this.y = y;
-    }
-
-    // 取得怪物是否存活
-    isAliveStatus(): boolean {
-        return this.isAlive;
-    }
-
-    // 更新怪物狀態
-    update(delta: number, playerPosition?: { x: number, y: number }): void {
-        if (!this.isAlive || !this.isActive) return;
-
-        // 根據移動模式更新怪物行為
-        if (playerPosition) {
-            this.updateBehavior(delta, playerPosition);
-        }
-
-        // 更新能量回復
-        this.stats.regenerateEnergy(delta);
-    }
-
-    // 處理怪物受傷
-    takeDamage(damage: number): boolean {
-        if (!this.isAlive) return false;
-
-        // 應用傷害到怪物
-        this.stats.takeDamage(damage);
-
-        // 檢查怪物是否死亡
-        if (this.stats.getCurrentHP() <= 0) {
-            this.die();
-            return true;
-        }
-
-        return false;
-    }
-
-    // 處理怪物死亡
-    die(): void {
-        this.isAlive = false;
-        this.currentState = MonsterState.DEAD;
+    }    // 獲取透明度
+    getAlpha(): number {
+        return this._alpha;
     }
     
-    // 重置怪物狀態
-    reset(): void {
-        this.isAlive = true;
-        this.isActive = false;
-        this.stats.resetHP();
-        this.stats.resetEnergy();
-        this.currentState = MonsterState.IDLE;
-        this.target = null;
-    }
-
-    // 激活怪物
-    activate(): void {
-        this.isActive = true;
-    }
-
-    // 停用怪物
-    deactivate(): void {
-        this.isActive = false;
-    }
-
-    // 計算與目標的距離
-    private distanceToTarget(targetPosition: { x: number, y: number }): number {
-        const dx = targetPosition.x - this.x;
-        const dy = targetPosition.y - this.y;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    // 更新怪物行為    
-     private updateBehavior(delta: number, playerPosition: { x: number, y: number }): void {
-        const distance = this.distanceToTarget(playerPosition);
-        
-        // 如果存在複雜行為ID，則使用自定義行為處理器
-        if (this.complexBehaviorId) {
-            this.handleComplexBehavior(delta, playerPosition, distance);
-            return;
-        }
-
-        // 基於移動模式處理行為
-        switch(this.movementPattern) {
-            case MovementPattern.STATIONARY:
-                this.handleStationaryBehavior(delta, playerPosition, distance);
-                break;
-            case MovementPattern.PATROL:
-                this.handlePatrolBehavior(delta, playerPosition, distance);
-                break;
-            case MovementPattern.PATROL_AND_CHASE:
-                this.handlePatrolAndChaseBehavior(delta, playerPosition, distance);
-                break;
-            case MovementPattern.AGGRESSIVE_CHASE:
-                this.handleAggressiveChaseBehavior(delta, playerPosition, distance);
-                break;
-            case MovementPattern.RANDOM:
-                this.handleRandomBehavior(delta, playerPosition, distance);
-                break;
-            default:
-                // 默認行為
-                this.handleStationaryBehavior(delta, playerPosition, distance);
-        }
-
-        // 處理攻擊行為
-        this.handleAttackBehavior(delta, playerPosition, distance);
-    }
-    private handleStationaryBehavior(_delta: number, playerPosition: { x: number, y: number }, distance: number): void {
-        // 靜止不動，但可以轉向面對玩家
-        if (distance < this.detectionRange) {
-            this.faceTarget(playerPosition);
-        }
-    }
-
-    // 巡邏行為處理
-    private handlePatrolBehavior(_delta: number, _playerPosition: { x: number, y: number }, _distance: number): void {
-        // 簡單巡邏行為實現 (實際遊戲中可能需要路徑點等)
-        // 當前僅為占位實現
-    }
-
-    // 巡邏並追擊行為處理
-    private handlePatrolAndChaseBehavior(delta: number, playerPosition: { x: number, y: number }, distance: number): void {
-        if (distance < this.detectionRange) {
-            this.chaseTarget(delta, playerPosition);
-        } else {
-            this.handlePatrolBehavior(delta, playerPosition, distance);
-        }
-    }
-
-    // 主動追擊行為處理
-    private handleAggressiveChaseBehavior(delta: number, playerPosition: { x: number, y: number }, distance: number): void {
-        // 主動追擊玩家，Detection Range 更大
-        const aggressiveRange = this.detectionRange * 1.5;
-        if (distance < aggressiveRange) {
-            this.chaseTarget(delta, playerPosition);
-        }
-    }
-
-    // 隨機行為處理
-    private handleRandomBehavior(_delta: number, _playerPosition: { x: number, y: number }, _distance: number): void {
-        // 隨機移動實現
-        // 當前僅為占位實現
-    }
-
-    // 複雜行為處理
-    private handleComplexBehavior(_delta: number, _playerPosition: { x: number, y: number }, _distance: number): void {
-        // 此處將處理特殊行為，通常在遊戲邏輯中根據 complexBehaviorId 單獨實現
-        console.log(`怪物 ${this.name} 使用複雜行為 ${this.complexBehaviorId}`);
-    }    // 攻擊行為處理
-    private handleAttackBehavior(_delta: number, playerPosition: { x: number, y: number }, distance: number): void {
-        if (!this.attackPattern) return;
-
-        // 定義每種攻擊模式的攻擊範圍
-        const attackRanges: Record<AttackPattern, number> = {
-            [AttackPattern.MELEE]: 50,
-            [AttackPattern.RANGED]: 300,
-            [AttackPattern.AREA_OF_EFFECT]: 150,
-            [AttackPattern.CHARGE]: 200,
-            [AttackPattern.SUMMON]: 400
-        };
-
-        const attackRange = attackRanges[this.attackPattern] || 50;
-
-        // 如果玩家在攻擊範圍內，進行攻擊
-        if (distance <= attackRange) {
-            this.performAttack(playerPosition);
-        }
-    }
-
-    // 執行攻擊
-    private performAttack(targetPosition: { x: number, y: number }): void {
-        if (!this.attackPattern) return;
-
-        // 面向目標
-        this.faceTarget(targetPosition);
-
-        // 根據攻擊模式執行不同攻擊
-        switch(this.attackPattern) {
-            case AttackPattern.MELEE:
-                this.performMeleeAttack();
-                break;
-            case AttackPattern.RANGED:
-                this.performRangedAttack(targetPosition);
-                break;
-            case AttackPattern.AREA_OF_EFFECT:
-                this.performAreaAttack();
-                break;
-            case AttackPattern.CHARGE:
-                this.performChargeAttack(targetPosition);
-                break;
-            case AttackPattern.SUMMON:
-                this.performSummonAttack();
-                break;
-        }
-    }
-
-    // 追擊目標
-    private chaseTarget(delta: number, targetPosition: { x: number, y: number }): void {
-        // 面向目標
-        this.faceTarget(targetPosition);
-
-        // 計算移動方向
-        const dx = targetPosition.x - this.x;
-        const dy = targetPosition.y - this.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        
-        if (length > 0) {
-            const normalizedDx = dx / length;
-            const normalizedDy = dy / length;
-            
-            // 使用怪物的移動速度
-            const moveSpeed = this.stats.getMoveSpeed() / 100; // 移動速度是百分比
-            const speedFactor = delta * moveSpeed;
-            
-            // 更新位置
-            this.x += normalizedDx * speedFactor;
-            this.y += normalizedDy * speedFactor;
-        }
-    }
-
-    // 面向目標
-    private faceTarget(targetPosition: { x: number, y: number }): void {
-        const dx = targetPosition.x - this.x;
-        const dy = targetPosition.y - this.y;
-        this.direction = Math.atan2(dy, dx) * (180 / Math.PI);
-    }    // 近戰攻擊
-    private performMeleeAttack(): void {
-        this.currentState = MonsterState.ATTACKING;
-        // 近戰攻擊邏輯，實際遊戲中會創建碰撞體等
-    }
-
-    // 遠程攻擊
-    private performRangedAttack(targetPosition: { x: number, y: number }): void {
-        this.currentState = MonsterState.ATTACKING;
-        // 遠程攻擊邏輯，實際遊戲中會創建投射物等
-        console.log(`怪物 ${this.name} 向 (${targetPosition.x}, ${targetPosition.y}) 方向發射遠程攻擊`);
-    }
-
-    // 範圍攻擊
-    private performAreaAttack(): void {
-        this.currentState = MonsterState.ATTACKING;
-        // 範圍攻擊邏輯，實際遊戲中會創建AOE攻擊區域等
-    }
-
-    // 衝鋒攻擊
-    private performChargeAttack(targetPosition: { x: number, y: number }): void {
-        this.currentState = MonsterState.CHARGING;
-        // 衝鋒攻擊邏輯，實際遊戲中會讓怪物快速移動到目標位置
-        console.log(`怪物 ${this.name} 向 (${targetPosition.x}, ${targetPosition.y}) 方向衝鋒`);
-    }
-
-    // 召喚攻擊
-    private performSummonAttack(): void {
-        this.currentState = MonsterState.SUMMONING;
-        // 召喚攻擊邏輯，實際遊戲中會生成小怪等
+    // 獲取縮放
+    getScale(): number {
+        return this._scale;
     }
 
     // 克隆此怪物實例
     clone(): Monster {
-        // 使用現有的數據創建一個新的怪物
-        // 注意：克隆時會自動生成新的 instanceId
         const monsterData: MonsterData = {
-            id: this.id, // 使用原始怪物的類型ID
+            id: this.id,
             name: this.name,
             baseStats: {
                 level: this.stats.getLevel(),
@@ -485,9 +544,7 @@ export class Monster {
                 energyRecovery: this.stats.getBaseEnergyRecovery()
             },
             category: this.category,
-            movementPattern: this.movementPattern,
-            attackPattern: this.attackPattern,
-            complexBehaviorId: this.complexBehaviorId,
+            behaviorId: this.behaviorId || undefined,
             experienceYield: this.experienceYield,
             isSolid: this.isSolid,
             sprite: this.sprite,
@@ -497,19 +554,7 @@ export class Monster {
             drops: [...this.drops],
             goldDrop: this.goldDrop
         };
-
+        
         return new Monster(monsterData);
     }
-}
-
-// 怪物狀態枚舉
-export enum MonsterState {
-    IDLE = 'idle',
-    PATROL = 'patrol',
-    CHASE = 'chase',
-    ATTACKING = 'attacking',
-    CHARGING = 'charging',
-    SUMMONING = 'summoning',
-    HURT = 'hurt',
-    DEAD = 'dead'
 }

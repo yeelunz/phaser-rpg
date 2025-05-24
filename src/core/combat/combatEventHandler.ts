@@ -164,7 +164,7 @@ export class CombatEventHandler {
                 return DamageType.PHYSICAL;
             case 'magical':
                 return DamageType.MAGICAL;
-            case 'hybrid':
+            case 'mixed':
                 return DamageType.MIXED;
             default:
                 console.warn(`未知的技能傷害類型: ${skillDamageType}，使用物理傷害作為默認值`);

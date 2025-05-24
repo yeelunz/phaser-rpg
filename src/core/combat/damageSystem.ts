@@ -127,8 +127,10 @@ export class DamageSystem {
         result.damageSources.push(`物理防禦: ${defender.getPhysicalDefense()} * (1 - ${attacker.getDefenseIgnore() / 100}) = ${effectiveDefense.toFixed(2)}`);
         result.damageSources.push(`初階減傷系數: ${initialDamageReductionCoeff.toFixed(4)}`);
         
-        // 3.3 特殊防禦調整(目前留空，這裡是擴展點)
-        const specialDefenseAdjustment = 1 - (0 * (1 - attacker.getDefenseIgnore() / 100));
+        // 3.3 這邊的抗性就是一個特殊防禦係數的意思
+        // 抗性的值只會在0~0.999之間，所以要做最大最小值的限制
+        const resistance = Math.max(0, Math.min(defender.getResistance(), 0.999));
+        const specialDefenseAdjustment = 1 - (resistance * (1 - attacker.getDefenseIgnore() / 100));
         const finalDamageMultiplier = 1 - (initialDamageReductionCoeff / Math.max(0.0001, specialDefenseAdjustment));
         result.damageSources.push(`最終傷害系數: ${finalDamageMultiplier.toFixed(4)}`);
         
@@ -179,7 +181,8 @@ export class DamageSystem {
         result.damageSources.push(`初階減傷系數: ${initialDamageReductionCoeff.toFixed(4)}`);
         
         // 3.3 特殊防禦調整(目前留空，這裡是擴展點)
-        const specialDefenseAdjustment = 1 - (0 * (1 - attacker.getDefenseIgnore() / 100));
+        const resistance = Math.max(0, Math.min(defender.getResistance(), 0.999));
+        const specialDefenseAdjustment = 1 - (resistance * (1 - attacker.getDefenseIgnore() / 100));
         const finalDamageMultiplier = 1 - (initialDamageReductionCoeff / Math.max(0.0001, specialDefenseAdjustment));
         result.damageSources.push(`最終傷害系數: ${finalDamageMultiplier.toFixed(4)}`);
         
